@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components/macro';
-import { Button } from 'antd';
 import { useEntityData, useRefetch } from '../../../EntityContext';
 import { EntityHealthStatus } from './EntityHealthStatus';
 import EntityDropdown, { EntityMenuItems } from '../../../EntityDropdown/EntityDropdown';
@@ -18,6 +17,7 @@ import ExternalUrlButton from '../../../ExternalUrlButton';
 import ShareButton from '../../../../../shared/share/ShareButton';
 import { capitalizeFirstLetterOnly } from '../../../../../shared/textUtil';
 import { IntegrationCfg } from '../../../../../../conf';
+import { PopupLinkButton } from '../../../../../shared/PopupLinkButton';
 
 const TitleWrapper = styled.div`
     display: flex;
@@ -73,11 +73,6 @@ export function getCanEditName(
     }
 }
 
-const StyledButton = styled(Button)`
-    padding-left: 10px;
-    padding-right: 10px;
-`;
-
 type Props = {
     refreshBrowser?: () => void;
     headerDropdownItems?: Set<EntityMenuItems>;
@@ -106,8 +101,6 @@ export const EntityHeader = ({
 
     const canEditName =
         isNameEditable && getCanEditName(entityType, entityData, me?.platformPrivileges as PlatformPrivileges);
-
-    const [eamButtonEnabled, setEamButtonEnabled] = useState<boolean>(true);
 
     return (
         <>
@@ -138,55 +131,13 @@ export const EntityHeader = ({
                 <SideHeaderContent>
                     <TopButtonsWrapper>
                         {IntegrationCfg.IntegrationRoutes.ENTITY_ACCESS_MANAGEMENT && (
-                            <StyledButton
-                                disabled={!eamButtonEnabled}
-                                type="link"
-                                onClick={() => {
-                                    // disable button to avoid double invocation
-                                    setEamButtonEnabled(false);
-
-                                    const eamUrl = `${IntegrationCfg.IntegrationRoutes.ENTITY_ACCESS_MANAGEMENT}/${entityType}/${urn}`;
-
-                                    const popupDoneCallback = (event) => {
-                                        if (event.data.sender === 'EAM') {
-                                            console.log('Received EAM event: ', event.data);
-                                            globalThis.removeEventListener('message', popupDoneCallback);
-                                            setEamButtonEnabled(true);
-                                        }
-                                    };
-
-                                    const popupClosedCallback = () => {
-                                        setEamButtonEnabled(true);
-                                    };
-
-                                    globalThis.addEventListener('message', popupDoneCallback);
-
-                                    const popup = window.open(eamUrl, 'parent', 'height=400,width=600');
-
-                                    if (popup) {
-                                        let popupLivenessCheckerInterval: ReturnType<typeof setInterval> | null = null;
-                                        const popupLivenessChecker = () => {
-                                            if (popup.closed && popupLivenessCheckerInterval) {
-                                                popupClosedCallback();
-                                                clearInterval(popupLivenessCheckerInterval);
-                                            }
-                                        };
-                                        popupLivenessCheckerInterval = setInterval(popupLivenessChecker, 1000);
-                                    }
-                                    // Optionally send sth to popup?
-                                    // setTimeout(() => {
-                                    //     popup?.postMessage(
-                                    //         {
-                                    //             fromParent: true,
-                                    //             messageBody: 'Good',
-                                    //         },
-                                    //         '/',
-                                    //     );
-                                    // }, 5000);
-                                }}
-                            >
-                                Entity Access Management
-                            </StyledButton>
+                            <PopupLinkButton
+                                baseUrl={IntegrationCfg.IntegrationRoutes.ENTITY_ACCESS_MANAGEMENT}
+                                entityType={entityType}
+                                urn={urn}
+                                // Some general callback?
+                                popupDoneCallback={() => {}}
+                            />
                         )}
                         {externalUrl && (
                             <ExternalUrlButton
