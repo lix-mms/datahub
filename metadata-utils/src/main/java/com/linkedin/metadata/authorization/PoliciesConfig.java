@@ -232,6 +232,12 @@ public class PoliciesConfig {
       "The ability to edit the column (field) descriptions associated with a dataset schema."
   );
 
+  public static final Privilege EDIT_DATASET_DATA_ACCESS_CONFIGURATION_PRIVILEGE = Privilege.of(
+      "EDIT_DATASET_DATA_ACCESS_CONFIGURATION",
+      "Edit Dataset Data Access Configuration",
+      "The ability to edit the configuration of accessing the source data of the dataset."
+  );
+
   public static final Privilege VIEW_DATASET_USAGE_PRIVILEGE = Privilege.of(
       "VIEW_DATASET_USAGE",
       "View Dataset Usage",

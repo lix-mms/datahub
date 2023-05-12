@@ -105,6 +105,7 @@ public class Constants {
   public static final String EDITABLE_DATASET_PROPERTIES_ASPECT_NAME = "editableDatasetProperties";
   public static final String DATASET_DEPRECATION_ASPECT_NAME = "datasetDeprecation";
   public static final String DATASET_UPSTREAM_LINEAGE_ASPECT_NAME = "datasetUpstreamLineage";
+  public static final String DATASET_DATA_ACCESS_CONFIGURATION_ASPECT_NAME = "dataAccessConfiguration";
   public static final String UPSTREAM_LINEAGE_ASPECT_NAME = "upstreamLineage";
   public static final String SCHEMA_METADATA_ASPECT_NAME = "schemaMetadata";
   public static final String EDITABLE_SCHEMA_METADATA_ASPECT_NAME = "editableSchemaMetadata";

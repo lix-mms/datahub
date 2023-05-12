@@ -310,3 +310,17 @@ query getDatasetSchema($urn: String!) {
         }
     }
 }
+
+query getDataAccessConfiguration($urn: String!) {
+    dataset(urn: $urn) {
+        urn
+        dataAccessConfiguration {
+            purposeRequired
+            fieldAccessConfig {
+                fieldPath
+                visible
+                ndaRequired
+            }
+        }
+    }
+}

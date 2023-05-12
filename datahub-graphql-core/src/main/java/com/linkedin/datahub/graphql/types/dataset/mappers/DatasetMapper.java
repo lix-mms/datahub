@@ -38,6 +38,7 @@ import com.linkedin.dataset.DatasetProperties;
 import com.linkedin.dataset.EditableDatasetProperties;
 import com.linkedin.dataset.UpstreamLineage;
 import com.linkedin.dataset.ViewProperties;
+import com.linkedin.dataset.DataAccessConfiguration;
 import com.linkedin.domain.Domains;
 import com.linkedin.entity.EntityResponse;
 import com.linkedin.entity.EnvelopedAspectMap;
@@ -106,6 +107,8 @@ public class DatasetMapper implements ModelMapper<EntityResponse, Dataset> {
             dataset.setFineGrainedLineages(UpstreamLineagesMapper.map(new UpstreamLineage(dataMap))));
         mappingHelper.mapToResult(EMBED_ASPECT_NAME, (dataset, dataMap) ->
             dataset.setEmbed(EmbedMapper.map(new Embed(dataMap))));
+        mappingHelper.mapToResult(DATASET_DATA_ACCESS_CONFIGURATION_ASPECT_NAME, (dataset, dataMap) ->
+            dataset.setDataAccessConfiguration(DataAccessConfigurationMapper.map(new DataAccessConfiguration(dataMap), entityUrn)));
         return mappingHelper.getResult();
     }
 

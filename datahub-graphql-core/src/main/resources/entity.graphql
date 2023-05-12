@@ -1315,6 +1315,19 @@ type Dataset implements EntityWithRelationships & Entity & BrowsableEntity {
     Whether or not this entity exists on DataHub
     """
     exists: Boolean
+
+    dataAccessConfiguration: DataAccessConfiguration
+}
+
+type SchemaFieldAccessConfig {
+    fieldPath: String
+    visible: Boolean
+    ndaRequired: Boolean
+}
+
+type DataAccessConfiguration {
+    purposeRequired: Boolean
+    fieldAccessConfig: [SchemaFieldAccessConfig]
 }
 
 type FineGrainedLineage {
@@ -4038,7 +4051,13 @@ input DatasetUpdateInput {
     Update to editable properties
     """
     editableProperties: DatasetEditablePropertiesUpdate
+
+    """
+    Update to data access configuration
+    """
+    dataAccessConfiguration: DataAccessConfigurationUpdate
 }
+
 
 """
 Arguments provided to batch update Dataset entities
@@ -4096,6 +4115,21 @@ input DatasetEditablePropertiesUpdate {
     """
     description: String!
 }
+
+input SchemaFieldAccessConfigInput {
+    fieldPath: String
+    visible: Boolean
+    ndaRequired: Boolean
+}
+
+"""
+Update to data access configuration of particular dataset
+"""
+input DataAccessConfigurationUpdate {
+    purposeRequired: Boolean
+    fieldAccessConfig: [SchemaFieldAccessConfigInput]
+}
+
 
 """
 Update to writable Chart fields

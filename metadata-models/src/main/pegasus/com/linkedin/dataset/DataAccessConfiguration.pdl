@@ -1,0 +1,17 @@
+namespace com.linkedin.dataset
+
+@Aspect = {
+  "name": "dataAccessConfiguration"
+}
+record DataAccessConfiguration {
+
+  /**
+   * Specifies if a purpose has to be provided for requesting access to data
+   */
+  purposeRequired: boolean = true
+
+  /**
+   * Configs of access to each individual field
+   */
+  fieldAccessConfig: array[SchemaFieldAccessConfig]
+}

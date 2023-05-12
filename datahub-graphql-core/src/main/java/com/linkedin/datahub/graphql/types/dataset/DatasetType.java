@@ -83,7 +83,8 @@ public class DatasetType implements SearchableEntityType<Dataset, String>, Brows
         SCHEMA_METADATA_ASPECT_NAME,
         DATA_PLATFORM_INSTANCE_ASPECT_NAME,
         SIBLINGS_ASPECT_NAME,
-        EMBED_ASPECT_NAME
+        EMBED_ASPECT_NAME,
+        DATASET_DATA_ACCESS_CONFIGURATION_ASPECT_NAME
     );
 
     private static final Set<String> FACET_FIELDS = ImmutableSet.of("origin", "platform");
@@ -273,6 +274,9 @@ public class DatasetType implements SearchableEntityType<Dataset, String>, Brows
         if (updateInput.getEditableSchemaMetadata() != null) {
             specificPrivileges.add(PoliciesConfig.EDIT_DATASET_COL_TAGS_PRIVILEGE.getType());
             specificPrivileges.add(PoliciesConfig.EDIT_DATASET_COL_DESCRIPTION_PRIVILEGE.getType());
+        }
+        if (updateInput.getDataAccessConfiguration() != null) {
+            specificPrivileges.add(PoliciesConfig.EDIT_DATASET_DATA_ACCESS_CONFIGURATION_PRIVILEGE.getType());
         }
 
         final ConjunctivePrivilegeGroup specificPrivilegeGroup = new ConjunctivePrivilegeGroup(specificPrivileges);

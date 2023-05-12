@@ -11,8 +11,11 @@ import com.linkedin.datahub.graphql.types.common.mappers.OwnershipUpdateMapper;
 import com.linkedin.datahub.graphql.types.common.mappers.util.UpdateMappingHelper;
 import com.linkedin.datahub.graphql.types.mappers.InputModelMapper;
 import com.linkedin.datahub.graphql.types.tag.mappers.TagAssociationUpdateMapper;
+import com.linkedin.dataset.DataAccessConfiguration;
 import com.linkedin.dataset.DatasetDeprecation;
 import com.linkedin.dataset.EditableDatasetProperties;
+import com.linkedin.dataset.SchemaFieldAccessConfigArray;
+import com.linkedin.dataset.SchemaFieldAccessConfig;
 import com.linkedin.mxe.MetadataChangeProposal;
 import com.linkedin.schema.EditableSchemaFieldInfo;
 import com.linkedin.schema.EditableSchemaFieldInfoArray;
@@ -103,6 +106,22 @@ public class DatasetUpdateInputMapper implements InputModelMapper<DatasetUpdateI
       editableDatasetProperties.setLastModified(auditStamp);
       editableDatasetProperties.setCreated(auditStamp);
       proposals.add(updateMappingHelper.aspectToProposal(editableDatasetProperties, EDITABLE_DATASET_PROPERTIES_ASPECT_NAME));
+    }
+
+    if (datasetUpdateInput.getDataAccessConfiguration() != null) {
+      final var dataAccessConfiguration = new DataAccessConfiguration();
+      final var dataAccessConfigurationInput = datasetUpdateInput.getDataAccessConfiguration();
+      dataAccessConfiguration.setFieldAccessConfig(
+        new SchemaFieldAccessConfigArray(
+          dataAccessConfigurationInput.getFieldAccessConfig().stream().map(
+              c -> new SchemaFieldAccessConfig()
+                .setFieldPath(c.getFieldPath())
+                .setNdaRequired(c.getNdaRequired(), SetMode.IGNORE_NULL)
+                .setVisible(c.getVisible(), SetMode.IGNORE_NULL))
+            .collect(Collectors.toList())));
+      dataAccessConfiguration.setPurposeRequired(dataAccessConfigurationInput.getPurposeRequired());
+
+      proposals.add(updateMappingHelper.aspectToProposal(dataAccessConfiguration, DATASET_DATA_ACCESS_CONFIGURATION_ASPECT_NAME));
     }
 
     return proposals;
