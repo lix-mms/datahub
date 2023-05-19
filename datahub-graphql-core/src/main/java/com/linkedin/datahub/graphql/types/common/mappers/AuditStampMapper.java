@@ -24,6 +24,7 @@ public class AuditStampMapper implements ModelMapper<com.linkedin.common.AuditSt
         final AuditStamp result = new AuditStamp();
         result.setActor(auditStamp.getActor().toString());
         result.setTime(auditStamp.getTime());
+        result.setMessage(auditStamp.getMessage());
         return result;
     }
 }

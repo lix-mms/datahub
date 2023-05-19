@@ -1,0 +1,12 @@
+namespace com.linkedin.dataaccess
+
+import com.linkedin.common.TimeStamp
+import com.linkedin.dataset.SchemaFieldPath
+import com.linkedin.schema.SchemaFieldDataType
+
+record SchemaFieldAccess {
+
+  fieldPath: SchemaFieldPath
+
+  type: SchemaFieldDataType
+}

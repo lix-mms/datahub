@@ -36,6 +36,14 @@ public interface AspectDao {
     EntityAspect getAspect(@Nonnull final EntityAspectIdentifier key);
 
     @Nonnull
+    List<EntityAspect> getAspectInLatestVersions(
+            @Nonnull final String urn,
+            @Nonnull final String aspectName,
+            final int start,
+            final int count
+    );
+
+    @Nonnull
     Map<EntityAspectIdentifier, EntityAspect> batchGet(@Nonnull final Set<EntityAspectIdentifier> keys);
 
     @Nonnull

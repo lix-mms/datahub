@@ -18,3 +18,13 @@
 #        maxVersions: 10
 #      time:
 #        maxAgeInSeconds: 2592000 # 30 days
+
+- entity: "dataAccess"
+  aspect: "*"
+  config:
+    retention:
+      # We expect to keep the records of data access for 10 years
+      # for auditing purposes. But time-based retention does not
+      # work, so we opt for using version-based given a large version
+      version:
+        maxVersions: 1000000

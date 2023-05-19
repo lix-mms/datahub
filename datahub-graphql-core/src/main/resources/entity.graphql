@@ -95,6 +95,11 @@ type Query {
     assertion(urn: String!): Assertion
 
     """
+    Fetch a Data Access
+    """
+    dataAccess(urn: String!): DataAccess
+
+    """
     List all DataHub Access Policies
     """
     listPolicies(input: ListPoliciesInput!): ListPoliciesResult
@@ -148,6 +153,10 @@ type Query {
     List all DataHub Domains
     """
     listDomains(input: ListDomainsInput!): ListDomainsResult
+
+    """
+    """
+    getDataAccessStatusInfoHistory(input: GetDataAccessStatusInfoHistoryInput!): GetDataAccessStatusInfoHistoryResult
 
     """
     Get all GlossaryTerms without a parentNode
@@ -616,6 +625,16 @@ type Mutation {
     deleteQuery(
       "Urn of the query to remove."
       urn: String!): Boolean
+
+    """
+    Create a new Data Access.
+    """
+    createDataAccess(input: CreateDataAccessInput!): String
+
+    """
+    Update Data Access.
+    """
+    updateDataAccess(input: UpdateDataAccessInput!): String
 }
 
 """
@@ -806,6 +825,11 @@ enum EntityType {
     A DataHub View
     """
     DATAHUB_VIEW
+
+    """
+    A Data Access
+    """
+    DATA_ACCESS
 
     """
     A dataset query
@@ -6393,6 +6417,162 @@ type Assertion implements EntityWithRelationships & Entity {
     lineage(input: LineageInput!): EntityLineageResult
 }
 
+type DataAccess implements Entity {
+    urn: String!
+
+    type: EntityType!
+
+    statusInfo: DataAccessStatusInfo
+
+    properties: DataAccessProperties
+
+    accessParties: DataAccessParties
+
+    dataset: Dataset!
+
+    relationships(input: RelationshipsInput!): EntityRelationshipsResult
+}
+
+
+enum DataAccessStatus {
+    PENDING
+
+    CHANGE_REQUIRED
+
+    CANCELED
+
+    APPROVED
+
+    PROVISIONED
+
+    PROVISIONING_FAILED
+
+    REJECTED
+
+    REVOKED
+
+    EXPIRED
+
+    UNKNOWN
+}
+
+type SchemaFieldAccess {
+    fieldPath: String!
+    type: SchemaFieldDataType!
+}
+
+type DataAccessProperties {
+    purpose: String
+    details: String
+    target: String
+    fieldAccesses: [SchemaFieldAccess!]
+}
+
+type DataAccessStatusInfo {
+    status: DataAccessStatus!
+    message: String
+    lastUpdatedBy: CorpUser!
+    auditStamp: AuditStamp!
+}
+
+type DataAccessParties {
+    requester: CorpUser!
+    grantor: CorpUser
+    authorizedApprovers: [CorpUser!]
+}
+
+"""
+Input for creating a new data access
+"""
+input CreateDataAccessInput {
+    """
+    Dataset URN
+    """
+    datasetUrn: String!
+
+    """
+    Platform principal URN
+    """
+    dataPlatformPrincipalUrn: String!
+
+    """
+    Properties of data access
+    """
+    properties: DataAccessPropertiesInput!
+}
+
+
+input DataAccessStatusInfoInput {
+    """
+    Status of data access
+    """
+    status: DataAccessStatus!
+
+    """
+    Message describing change of status change
+    """
+    message: String
+}
+
+input SchemaFieldAccessInput {
+    fieldPath: String!
+    type: SchemaFieldDataType!
+}
+
+input DataAccessPropertiesInput {
+    """
+    Purpose is text describing why access to data is requested
+    """
+    purpose: String
+    details: String
+
+    """
+    Target is the URN of the table/view to which the data access is delegated,
+    while permissions might not be directly granted on the source table.
+    Example is an authorized view, or a table where source data can be exported to.
+    """
+    target: String
+
+    fieldAccesses: [SchemaFieldAccessInput!]
+}
+
+input UpdateDataAccessInput {
+    """
+    URN of data access
+    """
+    urn: String!
+
+    """
+    Target status info
+    """
+    statusInfo: DataAccessStatusInfoInput!
+
+    """
+    Properties of data access
+    """
+    properties: DataAccessPropertiesInput
+}
+
+
+type GetDataAccessStatusInfoHistoryResult {
+    urn: String!
+    start: Int!
+    count: Int!
+    # dataAccessRequest: DataAccessRequest
+    statusInfoHistory: [DataAccessStatusInfo!]!
+}
+
+
+input GetDataAccessStatusInfoHistoryInput {
+    """
+    URN of Data Access Request
+    """
+    urn: String!
+    start: Int
+    count: Int
+}
+
+
 """
 Type of assertion. Assertion types can evolve to span Datasets, Flows (Pipelines), Models, Features etc.
 """
@@ -8249,6 +8429,11 @@ type AuditStamp {
     Who performed the audited action
     """
     actor: String
+
+    """
+    Message associated with audited action
+    """
+    message: String
 }
 
 """

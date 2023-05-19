@@ -1,0 +1,153 @@
+query getDataAccess($urn: String!) {
+    dataAccess(urn: $urn) {
+        ... dataAccess
+        dataset {
+            ... nonRecursiveDatasetFields
+        }
+    }
+}
+
+mutation createDataAccess($input: CreateDataAccessInput!) {
+    createDataAccess(input: $input)
+}
+
+mutation updateDataAccess($input: UpdateDataAccessInput!){
+    updateDataAccess(input: $input)
+}
+
+
+query getDataAccessOnDataset($urn: String!) {
+    dataset(urn: $urn) {
+        urn
+        name
+        relationships(input: { start: 0, count: 10, direction: INCOMING, types: ["RequestedOn"] }) {
+            relationships {
+                entity {
+                    ... dataAccess
+                }
+            }
+        }
+    }
+}
+
+
+query getDataAccessRequestedByCorpUser($urn: String!) {
+    corpUser(urn: $urn) {
+        properties {
+            displayName
+        }
+        relationships(input: {
+            start: 0
+            count: 20
+            direction: INCOMING
+            types: ["RequestedBy"]
+        }) {
+            relationships {
+                entity {
+                    ... dataAccess
+                }
+            }
+        }
+    }
+}
+
+
+# How about getDataAccessRequestedByCorpUser for particular dataset?
+# - Either filter from frontend
+# - Or provide dedicated query input and resolver
+
+
+# TBD - Implement resolvers for data access principals
+# query getDataAccessRequestedForPrincipal($urn: String!) {
+#     dataAccessPrincipal
+# }
+
+
+query getApprovableDataAccessesForUser($corpuserUrn: String!) {
+    corpUser(urn: $corpuserUrn) {
+        urn
+        relationships(input: { start: 0, count: 20, direction: INCOMING, types: ["CanBeApprovedBy"] }){
+            relationships{
+                entity {
+                    ... dataAccess
+                }
+            }
+        }
+    }
+}
+
+
+query getDataAccessStatusInfoHistory($input: GetDataAccessStatusInfoHistoryInput!) {
+    getDataAccessStatusInfoHistory(input: $input) {
+        urn
+        statusInfoHistory {
+            status
+            message
+            lastUpdatedBy {
+                ... corpuser
+            }
+            auditStamp {
+                actor
+                time
+                message
+            }
+        }
+    }
+}
+
+
+fragment corpuser on CorpUser {
+    urn
+    username
+    isNativeUser
+    properties {
+        active
+        displayName
+        title
+        firstName
+        lastName
+        fullName
+        email
+        departmentName
+    }
+    globalTags {
+        ...globalTagsFields
+    }
+}
+
+
+fragment dataAccess on DataAccess {
+    urn
+    properties {
+        purpose
+        details
+        target
+        fieldAccesses {
+            type
+            fieldPath
+        }
+    }
+    statusInfo {
+        status
+        message
+        lastUpdatedBy {
+            ... corpuser
+        }
+        auditStamp {
+            actor
+            time
+            message
+        }
+    }
+    accessParties {
+        requester {
+            ... corpuser
+        }
+        authorizedApprovers {
+            ... corpuser
+        }
+        grantor {
+            ... corpuser
+        }
+    }
+}

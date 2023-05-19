@@ -549,6 +549,37 @@
     }
   }, {
     "type" : "typeref",
+    "name" : "DataAccessUrn",
+    "namespace" : "com.linkedin.common",
+    "doc" : "Standardized data access identifier.",
+    "ref" : "string",
+    "java" : {
+      "class" : "com.linkedin.common.urn.DataAccessUrn"
+    },
+    "validate" : {
+      "com.linkedin.common.validator.TypedUrnValidator" : {
+        "accessible" : true,
+        "constructable" : true,
+        "doc" : "Identifier for data access",
+        "entityType" : "dataAccess",
+        "fields" : [ {
+          "doc" : "Dataset to be accessed",
+          "name" : "dataset",
+          "type" : "com.linkedin.common.urn.DatasetUrn"
+        }, {
+          "doc" : "Principal which will get access to data",
+          "name" : "principal",
+          "type" : "com.linkedin.common.urn.DataPlatformPrincipalUrn"
+        } ],
+        "maxLength" : 2048,
+        "name" : "DataAccess",
+        "namespace" : "li",
+        "owners" : [ "urn:li:corpuser:fbar", "urn:li:corpuser:bfoo" ],
+        "owningTeam" : "urn:li:internalTeam:datahub"
+      }
+    }
+  }, {
+    "type" : "typeref",
     "name" : "DataFlowUrn",
     "namespace" : "com.linkedin.common",
     "doc" : "Standardized data processing flow identifier.",
@@ -645,6 +676,37 @@
     } ],
     "Aspect" : {
       "name" : "dataPlatformInstance"
+    }
+  }, {
+    "type" : "typeref",
+    "name" : "DataPlatformPrincipalUrn",
+    "namespace" : "com.linkedin.common",
+    "doc" : "Principals in standardized data platforms",
+    "ref" : "string",
+    "java" : {
+      "class" : "com.linkedin.common.urn.DataPlatformPrincipalUrn"
+    },
+    "validate" : {
+      "com.linkedin.common.validator.TypedUrnValidator" : {
+        "accessible" : true,
+        "constructable" : true,
+        "doc" : "Principals in standardized data platforms",
+        "entityType" : "dataPlatformPrincipal",
+        "fields" : [ {
+          "doc" : "Standardized platform urn.",
+          "name" : "platform",
+          "type" : "com.linkedin.common.urn.DataPlatformUrn"
+        }, {
+          "doc" : "Principal native name e.g. user:alpha@google.com, serviceAccount:billingAccount@google.com",
+          "name" : "principalName",
+          "type" : "string"
+        } ],
+        "maxLength" : 1024,
+        "name" : "DataPlatformPrincipal",
+        "namespace" : "li",
+        "owners" : [ "urn:li:corpuser:fbar", "urn:li:corpuser:bfoo" ],
+        "owningTeam" : "urn:li:internalTeam:wherehows"
+      }
     }
   }, {
     "type" : "typeref",
@@ -842,18 +904,7 @@
                 }
               }
             },
-            "doc" : "Urn of the applied tag",
-            "Relationship" : {
-              "entityTypes" : [ "tag" ],
-              "name" : "TaggedWith"
-            },
-            "Searchable" : {
-              "addToFilters" : true,
-              "fieldName" : "tags",
-              "fieldType" : "URN",
-              "filterNameOverride" : "Tag",
-              "hasValuesFieldName" : "hasTags"
-            }
+            "doc" : "Urn of the applied tag"
           }, {
             "name" : "context",
             "type" : "string",
@@ -863,12 +914,20 @@
         }
       },
       "doc" : "Tags associated with a given entity",
+      "Relationship" : {
+        "/*/tag" : {
+          "entityTypes" : [ "tag" ],
+          "name" : "TaggedWith"
+        }
+      },
       "Searchable" : {
         "/*/tag" : {
           "addToFilters" : true,
           "boostScore" : 0.5,
           "fieldName" : "tags",
           "fieldType" : "URN",
+          "filterNameOverride" : "Tag",
+          "hasValuesFieldName" : "hasTags",
           "queryByDefault" : true
         }
       }
@@ -1402,6 +1461,231 @@
       "name" : "editableDashboardProperties"
     }
   }, {
+    "type" : "record",
+    "name" : "DataAccessParties",
+    "namespace" : "com.linkedin.dataaccess",
+    "doc" : "People who can be involved in decision upon and use of data access.\nThis aspect should not be created or updated by the end user, but\nrather by the backend with corresponding data from the context.",
+    "fields" : [ {
+      "name" : "requester",
+      "type" : "com.linkedin.common.CorpuserUrn",
+      "optional" : true,
+      "Relationship" : {
+        "entityTypes" : [ "corpuser" ],
+        "name" : "RequestedBy"
+      }
+    }, {
+      "name" : "authorizedApprovers",
+      "type" : {
+        "type" : "array",
+        "items" : "com.linkedin.common.CorpuserUrn"
+      },
+      "optional" : true,
+      "Relationship" : {
+        "/*" : {
+          "entityTypes" : [ "corpuser" ],
+          "name" : "CanBeApprovedBy"
+        }
+      }
+    }, {
+      "name" : "grantor",
+      "type" : "com.linkedin.common.CorpuserUrn",
+      "optional" : true,
+      "Relationship" : {
+        "entityTypes" : [ "corpuser" ],
+        "name" : "GrantedBy"
+      }
+    } ],
+    "Aspect" : {
+      "name" : "dataAccessParties"
+    }
+  }, {
+    "type" : "record",
+    "name" : "DataAccessProperties",
+    "namespace" : "com.linkedin.dataaccess",
+    "doc" : "Properties of data access request",
+    "fields" : [ {
+      "name" : "target",
+      "type" : "com.linkedin.common.DatasetUrn",
+      "doc" : "The data view to be provisioned to view the dataset",
+      "optional" : true
+    }, {
+      "name" : "purpose",
+      "type" : "string",
+      "optional" : true
+    }, {
+      "name" : "details",
+      "type" : "string",
+      "optional" : true
+    }, {
+      "name" : "fieldAccesses",
+      "type" : {
+        "type" : "array",
+        "items" : {
+          "type" : "record",
+          "name" : "SchemaFieldAccess",
+          "fields" : [ {
+            "name" : "fieldPath",
+            "type" : {
+              "type" : "typeref",
+              "name" : "SchemaFieldPath",
+              "namespace" : "com.linkedin.dataset",
+              "doc" : "Schema field path. TODO: Add formal documentation on normalization rules.",
+              "ref" : "string"
+            }
+          }, {
+            "name" : "type",
+            "type" : {
+              "type" : "record",
+              "name" : "SchemaFieldDataType",
+              "namespace" : "com.linkedin.schema",
+              "doc" : "Schema field data types",
+              "fields" : [ {
+                "name" : "type",
+                "type" : [ {
+                  "type" : "record",
+                  "name" : "BooleanType",
+                  "doc" : "Boolean field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "FixedType",
+                  "doc" : "Fixed field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "StringType",
+                  "doc" : "String field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "BytesType",
+                  "doc" : "Bytes field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "NumberType",
+                  "doc" : "Number data type: long, integer, short, etc..",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "DateType",
+                  "doc" : "Date field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "TimeType",
+                  "doc" : "Time field type. This should also be used for datetimes.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "EnumType",
+                  "doc" : "Enum field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "NullType",
+                  "doc" : "Null field type.",
+                  "fields" : [ ]
+                }, {
+                  "type" : "record",
+                  "name" : "MapType",
+                  "doc" : "Map field type.",
+                  "fields" : [ {
+                    "name" : "keyType",
+                    "type" : "string",
+                    "doc" : "Key type in a map",
+                    "optional" : true
+                  }, {
+                    "name" : "valueType",
+                    "type" : "string",
+                    "doc" : "Type of the value in a map",
+                    "optional" : true
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "ArrayType",
+                  "doc" : "Array field type.",
+                  "fields" : [ {
+                    "name" : "nestedType",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    },
+                    "doc" : "List of types this array holds.",
+                    "optional" : true
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "UnionType",
+                  "doc" : "Union field type.",
+                  "fields" : [ {
+                    "name" : "nestedTypes",
+                    "type" : {
+                      "type" : "array",
+                      "items" : "string"
+                    },
+                    "doc" : "List of types in union type.",
+                    "optional" : true
+                  } ]
+                }, {
+                  "type" : "record",
+                  "name" : "RecordType",
+                  "doc" : "Record field type.",
+                  "fields" : [ ]
+                } ],
+                "doc" : "Data platform specific types"
+              } ]
+            }
+          } ]
+        }
+      },
+      "optional" : true
+    } ],
+    "Aspect" : {
+      "name" : "dataAccessProperties"
+    }
+  }, {
+    "type" : "enum",
+    "name" : "DataAccessStatus",
+    "namespace" : "com.linkedin.dataaccess",
+    "doc" : "Job statuses",
+    "symbols" : [ "PENDING", "CHANGE_REQUIRED", "CANCELED", "APPROVED", "PROVISIONED", "PROVISIONING_FAILED", "REJECTED", "REVOKED", "EXPIRED", "UNKNOWN" ],
+    "symbolDocs" : {
+      "APPROVED" : "Data access approved.",
+      "CANCELED" : "Request canceled.",
+      "CHANGE_REQUIRED" : "Approver requires requester to change requested data access.",
+      "EXPIRED" : "Data access expired",
+      "PENDING" : "Data access pending for approval.",
+      "PROVISIONED" : "Data access provisioned.",
+      "PROVISIONING_FAILED" : "Data access provisioning failed.",
+      "REJECTED" : "Data access rejected",
+      "REVOKED" : "Data access revoked",
+      "UNKNOWN" : "Unknown"
+    }
+  }, {
+    "type" : "record",
+    "name" : "DataAccessStatusInfo",
+    "namespace" : "com.linkedin.dataaccess",
+    "doc" : "The status with information for data access request",
+    "fields" : [ {
+      "name" : "status",
+      "type" : "DataAccessStatus"
+    }, {
+      "name" : "message",
+      "type" : "string",
+      "optional" : true
+    }, {
+      "name" : "auditStamp",
+      "type" : "com.linkedin.common.AuditStamp",
+      "default" : {
+        "actor" : "urn:li:corpuser:unknown",
+        "time" : 0
+      }
+    } ],
+    "Aspect" : {
+      "name" : "dataAccessStatusInfo"
+    }
+  }, "com.linkedin.dataaccess.SchemaFieldAccess", {
     "type" : "record",
     "name" : "DataFlowInfo",
     "namespace" : "com.linkedin.datajob",
@@ -2153,13 +2437,7 @@
     "Aspect" : {
       "name" : "editableDatasetProperties"
     }
-  }, "com.linkedin.dataset.FineGrainedLineage", "com.linkedin.dataset.FineGrainedLineageDownstreamType", "com.linkedin.dataset.FineGrainedLineageUpstreamType", {
-    "type" : "typeref",
-    "name" : "SchemaFieldPath",
-    "namespace" : "com.linkedin.dataset",
-    "doc" : "Schema field path. TODO: Add formal documentation on normalization rules.",
-    "ref" : "string"
-  }, {
+  }, "com.linkedin.dataset.FineGrainedLineage", "com.linkedin.dataset.FineGrainedLineageDownstreamType", "com.linkedin.dataset.FineGrainedLineageUpstreamType", "com.linkedin.dataset.SchemaFieldPath", {
     "type" : "record",
     "name" : "Upstream",
     "namespace" : "com.linkedin.dataset",
@@ -3104,6 +3382,7 @@
                           "type" : "com.linkedin.dataset.SchemaFieldPath",
                           "doc" : "Flattened name of the field. Field is computed from jsonPath field.",
                           "Searchable" : {
+                            "boostScore" : 5.0,
                             "fieldName" : "fieldPaths",
                             "fieldType" : "TEXT"
                           }
@@ -3150,107 +3429,7 @@
                           "optional" : true
                         }, {
                           "name" : "type",
-                          "type" : {
-                            "type" : "record",
-                            "name" : "SchemaFieldDataType",
-                            "doc" : "Schema field data types",
-                            "fields" : [ {
-                              "name" : "type",
-                              "type" : [ {
-                                "type" : "record",
-                                "name" : "BooleanType",
-                                "doc" : "Boolean field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "FixedType",
-                                "doc" : "Fixed field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "StringType",
-                                "doc" : "String field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "BytesType",
-                                "doc" : "Bytes field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "NumberType",
-                                "doc" : "Number data type: long, integer, short, etc..",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "DateType",
-                                "doc" : "Date field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "TimeType",
-                                "doc" : "Time field type. This should also be used for datetimes.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "EnumType",
-                                "doc" : "Enum field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "NullType",
-                                "doc" : "Null field type.",
-                                "fields" : [ ]
-                              }, {
-                                "type" : "record",
-                                "name" : "MapType",
-                                "doc" : "Map field type.",
-                                "fields" : [ {
-                                  "name" : "keyType",
-                                  "type" : "string",
-                                  "doc" : "Key type in a map",
-                                  "optional" : true
-                                }, {
-                                  "name" : "valueType",
-                                  "type" : "string",
-                                  "doc" : "Type of the value in a map",
-                                  "optional" : true
-                                } ]
-                              }, {
-                                "type" : "record",
-                                "name" : "ArrayType",
-                                "doc" : "Array field type.",
-                                "fields" : [ {
-                                  "name" : "nestedType",
-                                  "type" : {
-                                    "type" : "array",
-                                    "items" : "string"
-                                  },
-                                  "doc" : "List of types this array holds.",
-                                  "optional" : true
-                                } ]
-                              }, {
-                                "type" : "record",
-                                "name" : "UnionType",
-                                "doc" : "Union field type.",
-                                "fields" : [ {
-                                  "name" : "nestedTypes",
-                                  "type" : {
-                                    "type" : "array",
-                                    "items" : "string"
-                                  },
-                                  "doc" : "List of types in union type.",
-                                  "optional" : true
-                                } ]
-                              }, {
-                                "type" : "record",
-                                "name" : "RecordType",
-                                "doc" : "Record field type.",
-                                "fields" : [ ]
-                              } ],
-                              "doc" : "Data platform specific types"
-                            } ]
-                          },
+                          "type" : "SchemaFieldDataType",
                           "doc" : "Platform independent field type of the field."
                         }, {
                           "name" : "nativeDataType",
@@ -5403,10 +5582,61 @@
             "keyAspect" : "dataHubRetentionKey",
             "name" : "dataHubRetention"
           }
+        }, {
+          "type" : "record",
+          "name" : "DataAccessSnapshot",
+          "doc" : "A metadata snapshot for a specific data access request entity.",
+          "fields" : [ {
+            "name" : "urn",
+            "type" : "com.linkedin.common.DataAccessUrn",
+            "doc" : "URN for the entity the metadata snapshot is associated with."
+          }, {
+            "name" : "aspects",
+            "type" : {
+              "type" : "array",
+              "items" : {
+                "type" : "typeref",
+                "name" : "DataAccessAspect",
+                "namespace" : "com.linkedin.metadata.aspect",
+                "doc" : "A union of all supported metadata aspects for a source data access request",
+                "ref" : [ {
+                  "type" : "record",
+                  "name" : "DataAccessKey",
+                  "namespace" : "com.linkedin.metadata.key",
+                  "doc" : "Key for a DataAccess",
+                  "fields" : [ {
+                    "name" : "dataset",
+                    "type" : "com.linkedin.common.DatasetUrn",
+                    "doc" : "The source dataset which will be accessed",
+                    "Relationship" : {
+                      "entityTypes" : [ "dataset" ],
+                      "name" : "RequestedOn"
+                    }
+                  }, {
+                    "name" : "principal",
+                    "type" : "com.linkedin.common.DataPlatformPrincipalUrn",
+                    "doc" : "The principal who will be accessing the dataset",
+                    "Relationship" : {
+                      "entityTypes" : [ "dataPlatformPrincipal" ],
+                      "name" : "RequestedFor"
+                    }
+                  } ],
+                  "Aspect" : {
+                    "name" : "dataAccessKey"
+                  }
+                }, "com.linkedin.dataaccess.DataAccessStatusInfo", "com.linkedin.dataaccess.DataAccessProperties", "com.linkedin.dataaccess.DataAccessParties" ]
+              }
+            },
+            "doc" : "The list of metadata aspects associated with the data access. Depending on the use case, this can either be all, or a selection, of supported aspects."
+          } ],
+          "Entity" : {
+            "keyAspect" : "dataAccessKey",
+            "name" : "dataAccess"
+          }
         } ]
       }
     } ]
-  }, "com.linkedin.glossary.GlossaryNodeInfo", "com.linkedin.glossary.GlossaryRelatedTerms", "com.linkedin.glossary.GlossaryTermInfo", "com.linkedin.identity.CorpGroupInfo", "com.linkedin.identity.CorpUserEditableInfo", "com.linkedin.identity.CorpUserInfo", "com.linkedin.identity.CorpUserStatus", "com.linkedin.identity.GroupMembership", "com.linkedin.metadata.aspect.ChartAspect", "com.linkedin.metadata.aspect.CorpGroupAspect", "com.linkedin.metadata.aspect.CorpUserAspect", "com.linkedin.metadata.aspect.DashboardAspect", "com.linkedin.metadata.aspect.DataFlowAspect", "com.linkedin.metadata.aspect.DataHubPolicyAspect", "com.linkedin.metadata.aspect.DataHubRetentionAspect", "com.linkedin.metadata.aspect.DataJobAspect", "com.linkedin.metadata.aspect.DataPlatformAspect", "com.linkedin.metadata.aspect.DataProcessAspect", "com.linkedin.metadata.aspect.DatasetAspect", "com.linkedin.metadata.aspect.GlossaryNodeAspect", "com.linkedin.metadata.aspect.GlossaryTermAspect", "com.linkedin.metadata.aspect.MLFeatureAspect", "com.linkedin.metadata.aspect.MLFeatureTableAspect", "com.linkedin.metadata.aspect.MLModelAspect", "com.linkedin.metadata.aspect.MLModelDeploymentAspect", "com.linkedin.metadata.aspect.MLModelGroupAspect", "com.linkedin.metadata.aspect.MLPrimaryKeyAspect", "com.linkedin.metadata.aspect.SchemaFieldAspect", "com.linkedin.metadata.aspect.TagAspect", {
+  }, "com.linkedin.glossary.GlossaryNodeInfo", "com.linkedin.glossary.GlossaryRelatedTerms", "com.linkedin.glossary.GlossaryTermInfo", "com.linkedin.identity.CorpGroupInfo", "com.linkedin.identity.CorpUserEditableInfo", "com.linkedin.identity.CorpUserInfo", "com.linkedin.identity.CorpUserStatus", "com.linkedin.identity.GroupMembership", "com.linkedin.metadata.aspect.ChartAspect", "com.linkedin.metadata.aspect.CorpGroupAspect", "com.linkedin.metadata.aspect.CorpUserAspect", "com.linkedin.metadata.aspect.DashboardAspect", "com.linkedin.metadata.aspect.DataAccessAspect", "com.linkedin.metadata.aspect.DataFlowAspect", "com.linkedin.metadata.aspect.DataHubPolicyAspect", "com.linkedin.metadata.aspect.DataHubRetentionAspect", "com.linkedin.metadata.aspect.DataJobAspect", "com.linkedin.metadata.aspect.DataPlatformAspect", "com.linkedin.metadata.aspect.DataProcessAspect", "com.linkedin.metadata.aspect.DatasetAspect", "com.linkedin.metadata.aspect.GlossaryNodeAspect", "com.linkedin.metadata.aspect.GlossaryTermAspect", "com.linkedin.metadata.aspect.MLFeatureAspect", "com.linkedin.metadata.aspect.MLFeatureTableAspect", "com.linkedin.metadata.aspect.MLModelAspect", "com.linkedin.metadata.aspect.MLModelDeploymentAspect", "com.linkedin.metadata.aspect.MLModelGroupAspect", "com.linkedin.metadata.aspect.MLPrimaryKeyAspect", "com.linkedin.metadata.aspect.SchemaFieldAspect", "com.linkedin.metadata.aspect.TagAspect", {
     "type" : "record",
     "name" : "BrowseResult",
     "namespace" : "com.linkedin.metadata.browse",
@@ -5490,7 +5720,7 @@
       "type" : "int",
       "doc" : "The total number of elements (entities + groups) directly under queried path"
     } ]
-  }, "com.linkedin.metadata.browse.BrowseResultEntity", "com.linkedin.metadata.browse.BrowseResultGroup", "com.linkedin.metadata.browse.BrowseResultMetadata", "com.linkedin.metadata.key.ChartKey", "com.linkedin.metadata.key.CorpGroupKey", "com.linkedin.metadata.key.CorpUserKey", "com.linkedin.metadata.key.DashboardKey", "com.linkedin.metadata.key.DataFlowKey", "com.linkedin.metadata.key.DataHubPolicyKey", "com.linkedin.metadata.key.DataHubRetentionKey", "com.linkedin.metadata.key.DataJobKey", "com.linkedin.metadata.key.DataPlatformKey", "com.linkedin.metadata.key.DataProcessKey", "com.linkedin.metadata.key.DatasetKey", "com.linkedin.metadata.key.GlossaryNodeKey", "com.linkedin.metadata.key.GlossaryTermKey", "com.linkedin.metadata.key.MLFeatureKey", "com.linkedin.metadata.key.MLFeatureTableKey", "com.linkedin.metadata.key.MLModelDeploymentKey", "com.linkedin.metadata.key.MLModelGroupKey", "com.linkedin.metadata.key.MLModelKey", "com.linkedin.metadata.key.MLPrimaryKeyKey", "com.linkedin.metadata.key.SchemaFieldKey", "com.linkedin.metadata.key.TagKey", {
+  }, "com.linkedin.metadata.browse.BrowseResultEntity", "com.linkedin.metadata.browse.BrowseResultGroup", "com.linkedin.metadata.browse.BrowseResultMetadata", "com.linkedin.metadata.key.ChartKey", "com.linkedin.metadata.key.CorpGroupKey", "com.linkedin.metadata.key.CorpUserKey", "com.linkedin.metadata.key.DashboardKey", "com.linkedin.metadata.key.DataAccessKey", "com.linkedin.metadata.key.DataFlowKey", "com.linkedin.metadata.key.DataHubPolicyKey", "com.linkedin.metadata.key.DataHubRetentionKey", "com.linkedin.metadata.key.DataJobKey", "com.linkedin.metadata.key.DataPlatformKey", "com.linkedin.metadata.key.DataProcessKey", "com.linkedin.metadata.key.DatasetKey", "com.linkedin.metadata.key.GlossaryNodeKey", "com.linkedin.metadata.key.GlossaryTermKey", "com.linkedin.metadata.key.MLFeatureKey", "com.linkedin.metadata.key.MLFeatureTableKey", "com.linkedin.metadata.key.MLModelDeploymentKey", "com.linkedin.metadata.key.MLModelGroupKey", "com.linkedin.metadata.key.MLModelKey", "com.linkedin.metadata.key.MLPrimaryKeyKey", "com.linkedin.metadata.key.SchemaFieldKey", "com.linkedin.metadata.key.TagKey", {
     "type" : "record",
     "name" : "AnyResult",
     "namespace" : "com.linkedin.metadata.query",
@@ -6109,7 +6339,7 @@
       "type" : "int",
       "doc" : "The total number of entities directly under searched path"
     } ]
-  }, "com.linkedin.metadata.search.SearchResultMetadata", "com.linkedin.metadata.snapshot.ChartSnapshot", "com.linkedin.metadata.snapshot.CorpGroupSnapshot", "com.linkedin.metadata.snapshot.CorpUserSnapshot", "com.linkedin.metadata.snapshot.DashboardSnapshot", "com.linkedin.metadata.snapshot.DataFlowSnapshot", "com.linkedin.metadata.snapshot.DataHubPolicySnapshot", "com.linkedin.metadata.snapshot.DataHubRetentionSnapshot", "com.linkedin.metadata.snapshot.DataJobSnapshot", "com.linkedin.metadata.snapshot.DataPlatformSnapshot", "com.linkedin.metadata.snapshot.DataProcessSnapshot", "com.linkedin.metadata.snapshot.DatasetSnapshot", "com.linkedin.metadata.snapshot.GlossaryNodeSnapshot", "com.linkedin.metadata.snapshot.GlossaryTermSnapshot", "com.linkedin.metadata.snapshot.MLFeatureSnapshot", "com.linkedin.metadata.snapshot.MLFeatureTableSnapshot", "com.linkedin.metadata.snapshot.MLModelDeploymentSnapshot", "com.linkedin.metadata.snapshot.MLModelGroupSnapshot", "com.linkedin.metadata.snapshot.MLModelSnapshot", "com.linkedin.metadata.snapshot.MLPrimaryKeySnapshot", "com.linkedin.metadata.snapshot.SchemaFieldSnapshot", "com.linkedin.metadata.snapshot.Snapshot", "com.linkedin.metadata.snapshot.TagSnapshot", "com.linkedin.ml.metadata.BaseData", "com.linkedin.ml.metadata.CaveatDetails", "com.linkedin.ml.metadata.CaveatsAndRecommendations", "com.linkedin.ml.metadata.DeploymentStatus", "com.linkedin.ml.metadata.EthicalConsiderations", "com.linkedin.ml.metadata.EvaluationData", "com.linkedin.ml.metadata.HyperParameterValueType", "com.linkedin.ml.metadata.IntendedUse", "com.linkedin.ml.metadata.IntendedUserType", "com.linkedin.ml.metadata.MLFeatureProperties", "com.linkedin.ml.metadata.MLFeatureTableProperties", "com.linkedin.ml.metadata.MLHyperParam", "com.linkedin.ml.metadata.MLMetric", "com.linkedin.ml.metadata.MLModelDeploymentProperties", "com.linkedin.ml.metadata.MLModelFactorPrompts", "com.linkedin.ml.metadata.MLModelFactors", "com.linkedin.ml.metadata.MLModelGroupProperties", "com.linkedin.ml.metadata.MLModelProperties", "com.linkedin.ml.metadata.MLPrimaryKeyProperties", "com.linkedin.ml.metadata.Metrics", "com.linkedin.ml.metadata.QuantitativeAnalyses", "com.linkedin.ml.metadata.ResultsType", "com.linkedin.ml.metadata.SourceCode", "com.linkedin.ml.metadata.SourceCodeUrl", "com.linkedin.ml.metadata.SourceCodeUrlType", "com.linkedin.ml.metadata.TrainingData", {
+  }, "com.linkedin.metadata.search.SearchResultMetadata", "com.linkedin.metadata.snapshot.ChartSnapshot", "com.linkedin.metadata.snapshot.CorpGroupSnapshot", "com.linkedin.metadata.snapshot.CorpUserSnapshot", "com.linkedin.metadata.snapshot.DashboardSnapshot", "com.linkedin.metadata.snapshot.DataAccessSnapshot", "com.linkedin.metadata.snapshot.DataFlowSnapshot", "com.linkedin.metadata.snapshot.DataHubPolicySnapshot", "com.linkedin.metadata.snapshot.DataHubRetentionSnapshot", "com.linkedin.metadata.snapshot.DataJobSnapshot", "com.linkedin.metadata.snapshot.DataPlatformSnapshot", "com.linkedin.metadata.snapshot.DataProcessSnapshot", "com.linkedin.metadata.snapshot.DatasetSnapshot", "com.linkedin.metadata.snapshot.GlossaryNodeSnapshot", "com.linkedin.metadata.snapshot.GlossaryTermSnapshot", "com.linkedin.metadata.snapshot.MLFeatureSnapshot", "com.linkedin.metadata.snapshot.MLFeatureTableSnapshot", "com.linkedin.metadata.snapshot.MLModelDeploymentSnapshot", "com.linkedin.metadata.snapshot.MLModelGroupSnapshot", "com.linkedin.metadata.snapshot.MLModelSnapshot", "com.linkedin.metadata.snapshot.MLPrimaryKeySnapshot", "com.linkedin.metadata.snapshot.SchemaFieldSnapshot", "com.linkedin.metadata.snapshot.Snapshot", "com.linkedin.metadata.snapshot.TagSnapshot", "com.linkedin.ml.metadata.BaseData", "com.linkedin.ml.metadata.CaveatDetails", "com.linkedin.ml.metadata.CaveatsAndRecommendations", "com.linkedin.ml.metadata.DeploymentStatus", "com.linkedin.ml.metadata.EthicalConsiderations", "com.linkedin.ml.metadata.EvaluationData", "com.linkedin.ml.metadata.HyperParameterValueType", "com.linkedin.ml.metadata.IntendedUse", "com.linkedin.ml.metadata.IntendedUserType", "com.linkedin.ml.metadata.MLFeatureProperties", "com.linkedin.ml.metadata.MLFeatureTableProperties", "com.linkedin.ml.metadata.MLHyperParam", "com.linkedin.ml.metadata.MLMetric", "com.linkedin.ml.metadata.MLModelDeploymentProperties", "com.linkedin.ml.metadata.MLModelFactorPrompts", "com.linkedin.ml.metadata.MLModelFactors", "com.linkedin.ml.metadata.MLModelGroupProperties", "com.linkedin.ml.metadata.MLModelProperties", "com.linkedin.ml.metadata.MLPrimaryKeyProperties", "com.linkedin.ml.metadata.Metrics", "com.linkedin.ml.metadata.QuantitativeAnalyses", "com.linkedin.ml.metadata.ResultsType", "com.linkedin.ml.metadata.SourceCode", "com.linkedin.ml.metadata.SourceCodeUrl", "com.linkedin.ml.metadata.SourceCodeUrlType", "com.linkedin.ml.metadata.TrainingData", {
     "type" : "record",
     "name" : "SystemMetadata",
     "namespace" : "com.linkedin.mxe",

@@ -27,6 +27,7 @@ import com.linkedin.metadata.graph.SiblingGraphService;
 import com.linkedin.metadata.models.registry.EntityRegistry;
 import com.linkedin.metadata.recommendation.RecommendationsService;
 import com.linkedin.metadata.secret.SecretService;
+import com.linkedin.metadata.service.DataAccessService;
 import com.linkedin.metadata.service.QueryService;
 import com.linkedin.metadata.service.SettingsService;
 import com.linkedin.metadata.service.ViewService;
@@ -152,6 +153,9 @@ public class GraphQLEngineFactory {
   @Value("${platformAnalytics.enabled}") // TODO: Migrate to DATAHUB_ANALYTICS_ENABLED
   private Boolean isAnalyticsEnabled;
 
+  @Autowired
+  @Qualifier("dataAccessService")
+  private DataAccessService _dataAccessService;
 
   @Bean(name = "graphQLEngine")
   @Nonnull
@@ -191,6 +195,7 @@ public class GraphQLEngineFactory {
     args.setLineageService(_lineageService);
     args.setQueryService(_queryService);
     args.setFeatureFlags(_configProvider.getFeatureFlags());
+    args.setDataAccessService(_dataAccessService);
     return new GmsGraphQLEngine(
             args
     ).builder().build();

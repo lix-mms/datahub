@@ -233,6 +233,29 @@ public class EbeanAspectDao implements AspectDao, AspectMigrationsDao {
   }
 
   @Override
+  @Nonnull
+  public List<EntityAspect> getAspectInLatestVersions(
+          @Nonnull String urn,
+          @Nonnull String aspectName,
+          final int start,
+          final int count
+  ) {
+    validateConnection();
+    final var pagedList = _server.find(EbeanAspectV2.class)
+        .where()
+        .eq(EbeanAspectV2.URN_COLUMN, urn)
+        .eq(EbeanAspectV2.ASPECT_COLUMN, aspectName)
+        .setFirstRow(start)
+        .setMaxRows(count)
+        .orderBy()
+        // Since it is hard to order by version descendant while keeping version 0 at top,
+        // so order by creation time descendant instead
+        .desc(EbeanAspectV2.CREATED_ON_COLUMN)
+        .findPagedList();
+    return pagedList.getList().stream().map(EbeanAspectV2::toEntityAspect).collect(Collectors.toList());
+  }
+
+  @Override
   public void deleteAspect(@Nonnull final EntityAspect aspect) {
     validateConnection();
     EbeanAspectV2 ebeanAspect = EbeanAspectV2.fromEntityAspect(aspect);

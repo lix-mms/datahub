@@ -28,6 +28,7 @@ dependencies {
   compile externalDependency.springCore
   compile externalDependency.springKafka
   compile externalDependency.springWeb
+  compile externalDependency.mysqlConnector
 
   implementation externalDependency.awsPostgresIamAuth
   implementation externalDependency.awsRds

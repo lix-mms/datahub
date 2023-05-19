@@ -516,6 +516,18 @@ public class EntityService {
         aspectMetadataList.getPageSize());
   }
 
+  @Nonnull
+  public List<RecordTemplate> listAspectInLatestVersions(
+      @Nonnull final Urn urn,
+      @Nonnull final String aspectName,
+      final int start,
+      final int count) {
+    return _aspectDao.getAspectInLatestVersions(urn.toString(), aspectName, start, count)
+        .stream().map(entityAspect ->
+            EntityUtils.toAspectRecord(
+                urnToEntityName(urn), aspectName, entityAspect.getMetadata(), getEntityRegistry()))
+        .collect(Collectors.toList());
+  }
 
   @Nonnull
   protected UpdateAspectResult wrappedIngestAspectToLocalDB(@Nonnull final Urn urn, @Nonnull final String aspectName,

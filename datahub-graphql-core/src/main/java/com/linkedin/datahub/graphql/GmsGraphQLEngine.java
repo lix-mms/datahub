@@ -45,6 +45,7 @@ import com.linkedin.datahub.graphql.generated.DataJob;
 import com.linkedin.datahub.graphql.generated.DataJobInputOutput;
 import com.linkedin.datahub.graphql.generated.DataPlatformInstance;
 import com.linkedin.datahub.graphql.generated.Dataset;
+import com.linkedin.datahub.graphql.generated.DataAccess;
 import com.linkedin.datahub.graphql.generated.DatasetStatsSummary;
 import com.linkedin.datahub.graphql.generated.Domain;
 import com.linkedin.datahub.graphql.generated.EntityPath;
@@ -105,6 +106,7 @@ import com.linkedin.datahub.graphql.resolvers.container.ContainerEntitiesResolve
 import com.linkedin.datahub.graphql.resolvers.container.ParentContainersResolver;
 import com.linkedin.datahub.graphql.resolvers.dashboard.DashboardStatsSummaryResolver;
 import com.linkedin.datahub.graphql.resolvers.dashboard.DashboardUsageStatsResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.*;
 import com.linkedin.datahub.graphql.resolvers.dataset.DatasetHealthResolver;
 import com.linkedin.datahub.graphql.resolvers.dataset.DatasetStatsSummaryResolver;
 import com.linkedin.datahub.graphql.resolvers.dataset.DatasetUsageStatsResolver;
@@ -255,6 +257,7 @@ import com.linkedin.datahub.graphql.types.container.ContainerType;
 import com.linkedin.datahub.graphql.types.corpgroup.CorpGroupType;
 import com.linkedin.datahub.graphql.types.corpuser.CorpUserType;
 import com.linkedin.datahub.graphql.types.dashboard.DashboardType;
+import com.linkedin.datahub.graphql.types.dataaccess.DataAccessType;
 import com.linkedin.datahub.graphql.types.dataflow.DataFlowType;
 import com.linkedin.datahub.graphql.types.datajob.DataJobType;
 import com.linkedin.datahub.graphql.types.dataplatform.DataPlatformType;
@@ -291,6 +294,7 @@ import com.linkedin.metadata.graph.SiblingGraphService;
 import com.linkedin.metadata.models.registry.EntityRegistry;
 import com.linkedin.metadata.recommendation.RecommendationsService;
 import com.linkedin.metadata.secret.SecretService;
+import com.linkedin.metadata.service.DataAccessService;
 import com.linkedin.metadata.service.QueryService;
 import com.linkedin.metadata.service.SettingsService;
 import com.linkedin.metadata.service.ViewService;
@@ -351,6 +355,7 @@ public class GmsGraphQLEngine {
     private final TimelineService timelineService;
     private final NativeUserService nativeUserService;
     private final GroupService groupService;
+    private final DataAccessService dataAccessService;
     private final RoleService roleService;
     private final InviteTokenService inviteTokenService;
     private final PostService postService;
@@ -389,6 +394,7 @@ public class GmsGraphQLEngine {
     private final AspectType aspectType;
     private final ContainerType containerType;
     private final DomainType domainType;
+    private final DataAccessType dataAccessType;
     private final NotebookType notebookType;
     private final AssertionType assertionType;
     private final VersionedDatasetType versionedDatasetType;
@@ -451,6 +457,7 @@ public class GmsGraphQLEngine {
         this.viewService = args.viewService;
         this.settingsService = args.settingsService;
         this.lineageService = args.lineageService;
+        this.dataAccessService = args.dataAccessService;
         this.queryService = args.queryService;
 
         this.ingestionConfiguration = Objects.requireNonNull(args.ingestionConfiguration);
@@ -482,6 +489,7 @@ public class GmsGraphQLEngine {
         this.aspectType = new AspectType(entityClient);
         this.containerType = new ContainerType(entityClient);
         this.domainType = new DomainType(entityClient);
+        this.dataAccessType = new DataAccessType(entityClient);
         this.notebookType = new NotebookType(entityClient);
         this.assertionType = new AssertionType(entityClient);
         this.versionedDatasetType = new VersionedDatasetType(entityClient);
@@ -515,6 +523,7 @@ public class GmsGraphQLEngine {
             containerType,
             notebookType,
             domainType,
+            dataAccessType,
             assertionType,
             versionedDatasetType,
             dataPlatformInstanceType,
@@ -576,6 +585,7 @@ public class GmsGraphQLEngine {
         configureGlossaryTermResolvers(builder);
         configureGlossaryNodeResolvers(builder);
         configureDomainResolvers(builder);
+        configureDataAccessResolvers(builder);
         configureAssertionResolvers(builder);
         configurePolicyResolvers(builder);
         configureDataProcessInstanceResolvers(builder);
@@ -706,6 +716,7 @@ public class GmsGraphQLEngine {
             .dataFetcher("glossaryTerm", getResolver(glossaryTermType))
             .dataFetcher("glossaryNode", getResolver(glossaryNodeType))
             .dataFetcher("domain", getResolver((domainType)))
+            .dataFetcher("dataAccess", getResolver(dataAccessType))
             .dataFetcher("dataPlatform", getResolver(dataPlatformType))
             .dataFetcher("mlFeatureTable", getResolver(mlFeatureTableType))
             .dataFetcher("mlFeature", getResolver(mlFeatureType))
@@ -746,6 +757,7 @@ public class GmsGraphQLEngine {
             .dataFetcher("globalViewsSettings", new GlobalViewsSettingsResolver(this.settingsService))
             .dataFetcher("listQueries", new ListQueriesResolver(this.entityClient))
             .dataFetcher("getQuickFilters", new GetQuickFiltersResolver(this.entityClient, this.viewService))
+            .dataFetcher("getDataAccessStatusInfoHistory", new GetDataAccessStatusInfoHistoryResolver(this.entityClient, this.dataAccessService))
         );
     }
 
@@ -881,6 +893,8 @@ public class GmsGraphQLEngine {
             .dataFetcher("createQuery", new CreateQueryResolver(this.queryService))
             .dataFetcher("updateQuery", new UpdateQueryResolver(this.queryService))
             .dataFetcher("deleteQuery", new DeleteQueryResolver(this.queryService))
+            .dataFetcher("createDataAccess", new CreateDataAccessResolver(this.dataAccessService))
+            .dataFetcher("updateDataAccess", new UpdateDataAccessResolver(this.dataAccessService))
         );
     }
 
@@ -1546,6 +1560,19 @@ public class GmsGraphQLEngine {
             .dataFetcher("domain",
                 new LoadableTypeResolver<>(domainType,
                     (env) -> ((com.linkedin.datahub.graphql.generated.DomainAssociation) env.getSource()).getDomain().getUrn()))
+        );
+    }
+
+    private void configureDataAccessResolvers(final RuntimeWiring.Builder builder) {
+        builder.type("DataAccess",
+            typeWiring -> typeWiring
+                .dataFetcher("relationships", new EntityRelationshipsResultResolver(graphClient))
+                .dataFetcher("dataset", new LoadableTypeResolver<>(datasetType,
+                    (env) -> ((DataAccess) env.getSource()).getDataset().getUrn())
+                )
+                .dataFetcher("statusInfo", new DataAccessStatusInfoResolver(entityClient))
+                .dataFetcher("properties", new DataAccessPropertiesResolver(entityClient))
+                .dataFetcher("accessParties", new DataAccessPartiesResolver(entityClient))
         );
     }
 

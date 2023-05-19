@@ -9,6 +9,7 @@ import com.datastax.oss.driver.api.core.cql.BatchType;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.metadata.schema.ClusteringOrder;
 import com.datastax.oss.driver.api.core.paging.OffsetPager;
 import com.datastax.oss.driver.api.core.paging.OffsetPager.Page;
 import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
@@ -82,6 +83,35 @@ public class CassandraAspectDao implements AspectDao, AspectMigrationsDao {
   public EntityAspect getLatestAspect(@Nonnull String urn, @Nonnull String aspectName) {
     validateConnection();
     return getAspect(urn, aspectName, ASPECT_LATEST_VERSION);
+  }
+
+  @Override
+  @Nonnull
+  public List<EntityAspect> getAspectInLatestVersions(
+          @Nonnull final String urn,
+          @Nonnull final String aspectName,
+          final int start,
+          final int count
+  ) {
+    validateConnection();
+    SimpleStatement ss = selectFrom(CassandraAspect.TABLE_NAME)
+        .all()
+        .whereColumn(CassandraAspect.URN_COLUMN).isEqualTo(literal(urn))
+        .whereColumn(CassandraAspect.ASPECT_COLUMN).isEqualTo(literal(aspectName))
+        .orderBy(Map.of(CassandraAspect.CREATED_ON_COLUMN, ClusteringOrder.DESC))
+        .allowFiltering()
+        .build();
+
+    ResultSet rs = _cqlSession.execute(ss);
+
+    int pageNumber = start / count + 1;
+    OffsetPager offsetPager = new OffsetPager(count);
+    Page<Row> page = offsetPager.getPage(rs, pageNumber);
+
+    return page
+        .getElements()
+        .stream().map(CassandraAspect::rowToEntityAspect)
+        .collect(Collectors.toList());
   }
 
   @Override

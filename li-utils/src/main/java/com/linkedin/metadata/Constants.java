@@ -112,6 +112,13 @@ public class Constants {
   public static final String VIEW_PROPERTIES_ASPECT_NAME = "viewProperties";
   public static final String DATASET_PROFILE_ASPECT_NAME = "datasetProfile";
 
+  // Data Access
+  public static final String DATA_ACCESS_KEY_ASPECT_NAME = "dataAccessKey";
+  public static final String DATA_ACCESS_ENTITY_NAME = "dataAccess";
+  public static final String DATA_ACCESS_STATUS_INFO_ASPECT_NAME = "dataAccessStatusInfo";
+  public static final String DATA_ACCESS_PROPERTIES_ASPECT_NAME = "dataAccessProperties";
+  public static final String DATA_ACCESS_PARTIES_ASPECT_NAME = "dataAccessParties";
+
   // Chart
   public static final String CHART_KEY_ASPECT_NAME = "chartKey";
   public static final String CHART_INFO_ASPECT_NAME = "chartInfo";
