@@ -7,6 +7,9 @@ import { ReactComponent as DataAccessSvg } from '../../../../../images/data-acce
 
 import { useDataAccessRole } from '../../useDataAccessRole';
 import { DataAccessModal } from './DataAccessModal';
+import { RequestDataAccessModal } from './RequestDataAccessModal';
+import { useEntityData } from '../../../shared/EntityContext';
+import { useGetDataAccessConfigurationQuery } from '../../../../../graphql/dataset.generated';
 
 const DropdownMenuWrapper = styled.div`
     margin-right: 0.5em;
@@ -24,6 +27,14 @@ const ButtonStyled = styled(Button)`
 export const DropdownAccessDataMenu = () => {
     const { isOwner } = useDataAccessRole();
     const [showAccessConfigModal, setShowAccessConfigModal] = useState(false);
+    const [showRequestDataAccessModal, setShowRequestDataAccessModal] = useState(false);
+
+    /** TODO Perhaps this query can be moved to RequestDataAccessModal component
+     * and handle an alternative flow when the an access configuration doesn't exist */
+    const { urn } = useEntityData();
+    const { data: configurationEntity } = useGetDataAccessConfigurationQuery({
+        variables: { urn },
+    });
 
     const items: MenuProps['items'] = [];
 
@@ -35,6 +46,14 @@ export const DropdownAccessDataMenu = () => {
                 setShowAccessConfigModal(true);
             },
             icon: <SettingOutlined />,
+        });
+    } else if (configurationEntity && configurationEntity.dataset?.dataAccessConfiguration) {
+        items.push({
+            key: '2',
+            label: 'Request Data Access',
+            onClick: () => {
+                setShowRequestDataAccessModal(true);
+            },
         });
     }
 
@@ -55,6 +74,16 @@ export const DropdownAccessDataMenu = () => {
                                 setShowAccessConfigModal(false);
                             }}
                             key="data-access-modal"
+                        />
+                    )}
+                    {showRequestDataAccessModal && (
+                        <RequestDataAccessModal
+                            title=""
+                            onCloseModal={() => {
+                                setShowRequestDataAccessModal(false);
+                            }}
+                            onOk={() => {}}
+                            key="request-data-access-modal"
                         />
                     )}
                 </DropdownMenuWrapper>

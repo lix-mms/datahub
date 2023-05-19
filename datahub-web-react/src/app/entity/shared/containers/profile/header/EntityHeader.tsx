@@ -16,7 +16,7 @@ import ExternalUrlButton from '../../../ExternalUrlButton';
 import ShareButton from '../../../../../shared/share/ShareButton';
 import { capitalizeFirstLetterOnly } from '../../../../../shared/textUtil';
 import { useUserContext } from '../../../../../context/useUserContext';
-import { DropdownAccessDataMenu } from '../../../../accessData/shared/dropdownMenu/DropdownAccessDataMenu';
+import { DropdownAccessDataMenu } from '../../../../dataAccess/shared/dropdownMenu/DropdownAccessDataMenu';
 
 const TitleWrapper = styled.div`
     display: flex;

@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import styled from 'styled-components';
-import { Typography } from 'antd';
+import { Card, Typography } from 'antd';
 
 import { useGetEntityWithSchema } from '../../../shared/tabs/Dataset/Schema/useGetEntitySchema';
 import {
@@ -10,7 +10,7 @@ import {
     StepperModal,
     StepsData,
     ConfirmationStepComponentProps,
-} from './StepperModal';
+} from '../stepper/StepperModal';
 import { SchemaTable } from '../SchemaTable';
 import { SchemaSummaryTable } from '../SchemaSummaryTable';
 import { groupByFieldPath } from '../../../dataset/profile/schema/utils/utils';
@@ -62,31 +62,44 @@ const prepareToSend = (values: StepsData): DataAccessConfigurationData => {
     };
 };
 
-const SchemaStep = ({ step, stepData, updateStepData }: StepComponentProps) => {
-    if (!stepData) {
-        return <></>;
-    }
+const SchemaStep = ({ step, stepData, updateStepData, moveStep, navigateTo }: StepComponentProps) => {
+    const isStepSet = Object.keys(step).length > 0 && Object.keys(stepData).length;
 
-    const selectableGroups = Object.keys(step.fieldGroups)
-        .filter((group) => step.fieldGroups[group].type === 'selectable-table')
-        .map((groupName) => {
-            return {
-                name: groupName,
-                fields: Object.keys(stepData[groupName]).map((fieldName) => {
-                    return { key: fieldName, field: fieldName };
-                }),
-                values: Object.keys(stepData[groupName])
-                    .filter((fieldName) => stepData[groupName][fieldName])
-                    .map((fieldName) => fieldName),
-                label: step.fieldGroups[groupName].label,
-            };
-        });
+    const selectableGroups = isStepSet
+        ? Object.keys(step.fieldGroups)
+              .filter((group) => step.fieldGroups[group].type === 'selectable-table')
+              .map((groupName) => {
+                  return {
+                      name: groupName,
+                      fields: Object.keys(stepData[groupName]).map((fieldName) => {
+                          return { key: fieldName, field: fieldName };
+                      }),
+                      values: Object.keys(stepData[groupName])
+                          .filter((fieldName) => stepData[groupName][fieldName])
+                          .map((fieldName) => fieldName),
+                      label: step.fieldGroups[groupName].label,
+                  };
+              })
+        : [];
+
+    const filledGroups = Object.values(stepData)
+        .map((fieldGroupValue) => Object.values(fieldGroupValue).filter((fieldValue) => !!fieldValue))
+        .filter((filledFields) => filledFields.length > 0);
+
+    const isValid = filledGroups.length === selectableGroups.length;
+
+    useEffect(() => {
+        if (!isValid) {
+            moveStep('stay');
+        } else {
+            moveStep(navigateTo);
+        }
+    }, [isValid, moveStep, navigateTo]);
 
     return (
         <>
             {selectableGroups.map((group) => (
-                <>
-                    <Typography.Text strong>{group.label}</Typography.Text>
+                <Card size="small" title={group.label}>
                     <SchemaTable
                         key={group.name}
                         fields={group.fields}
@@ -101,7 +114,7 @@ const SchemaStep = ({ step, stepData, updateStepData }: StepComponentProps) => {
                             }
                         }}
                     />
-                </>
+                </Card>
             ))}
         </>
     );
@@ -178,13 +191,13 @@ export const DataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
     }, [configurationEntity]);
 
     const fieldConfig = useMemo(() => {
-        const schemaFields: Record<string, InputField<boolean, false>> = {};
+        const schemaFields: Record<string, InputField<boolean>> = {};
         fieldPaths.forEach((el) => {
             let defaultValue = true;
             if (el.fieldPath in storedFieldConfig) {
                 defaultValue = storedFieldConfig[el.fieldPath].visible;
             }
-            schemaFields[el.fieldPath] = { defaultValue, multiValue: false };
+            schemaFields[el.fieldPath] = { defaultValue, multiValue: false, inputType: 'selectable-cell' };
         });
         return schemaFields;
     }, [fieldPaths, storedFieldConfig]);
@@ -214,7 +227,13 @@ export const DataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
     return (
         <>
             {(loadingSchema || loadingConfigurationEntity) && <>Loading</>}
-            <StepperModal title={modalTitle} onCloseModal={onCloseModal} onOk={onComplete} steps={steps} />
+            <StepperModal
+                title={modalTitle}
+                onCloseModal={onCloseModal}
+                onOk={onComplete}
+                steps={steps}
+                key={modalTitle}
+            />
         </>
     );
 };

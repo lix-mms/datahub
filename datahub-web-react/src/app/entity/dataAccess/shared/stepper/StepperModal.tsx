@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Modal, Steps } from 'antd';
 import styled from 'styled-components';
+import { Rule } from 'antd/lib/form';
+import { Store, StoreValue } from 'antd/lib/form/interface';
+import { CheckboxOptionType } from 'antd/es/checkbox';
+
 import { ANTD_GRAY } from '../../../shared/constants';
 
 export type CustomType<T, A extends boolean> = T extends string
@@ -19,15 +23,23 @@ export type CustomType<T, A extends boolean> = T extends string
 
 type InputValueType = boolean | string | number;
 
-export type InputField<T, M extends boolean> = {
-    defaultValue: CustomType<T, M>;
-    multiValue: M;
+export type InputField<T> = {
+    defaultValue: CustomType<T, T extends any[] ? true : false>;
+    multiValue: T extends any[] ? true : false;
+    inputType: 'textfield' | 'textarea' | 'radio' | 'selectable-cell' | 'principalId';
+    label?: string;
+    required?: boolean;
+    help?: string;
+    rules?: Rule[];
+    normalize?: (value: StoreValue, prevValue: StoreValue, allValues: Store) => StoreValue;
+    options?: Array<CheckboxOptionType | string | number>;
+    tooltipInfo?: string;
 };
 
 export type FieldGroup = {
     label: string;
     type: string;
-    inputFields: Record<string, InputField<InputValueType, boolean>>;
+    inputFields: Record<string, InputField<InputValueType>>;
 };
 
 type UpdateStepData = ({ stepData }: { stepData: StepData }) => void;
@@ -45,10 +57,14 @@ export type ConfirmationStepComponentProps = {
     stepData: StepData;
 };
 
+export type Movement = 'forward' | 'backward' | 'stay';
+
 export type StepComponentProps = {
     step: Step;
     stepData: StepData;
     updateStepData?: UpdateStepData;
+    moveStep: (movement: Movement) => void;
+    navigateTo: Movement;
 };
 
 export type Step = {
@@ -67,7 +83,7 @@ type Props = {
 };
 
 const StepContent = styled.div`
-    margin: 2.5em -2em 0;
+    margin: 2em -2em -2em;
     padding: 2em;
     border-top: 1px solid ${ANTD_GRAY[4]};
     max-height: 400px;
@@ -75,14 +91,20 @@ const StepContent = styled.div`
 `;
 
 const StepSummary = styled.div`
-    border: 1px solid ${ANTD_GRAY[4]};
-    margin-bottom: 1em;
-    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+`;
+
+const StepsStyled = styled(Steps)`
+    width: 90%;
+    margin: 0 auto;
 `;
 
 export const StepperModal = ({ onCloseModal, onOk, title, steps }: Props) => {
     const [current, setCurrent] = useState(0);
-    const [stepsData, setStepsData] = useState<StepsData>({});
+    const [stepsData, setStepsData] = useState<StepsData>({ 0: {} });
+    const [navigateTo, setNavigateTo] = useState<Movement>('stay');
 
     useEffect(() => {
         const initialValues: StepsData = {};
@@ -120,10 +142,20 @@ export const StepperModal = ({ onCloseModal, onOk, title, steps }: Props) => {
         setCurrent(current - 1);
     };
 
+    const moveStep = (direction: Movement) => {
+        if (direction === 'forward') {
+            next();
+        } else if (direction === 'backward') {
+            prev();
+        }
+        setNavigateTo('stay');
+    };
+
     return (
         <Modal
-            width={650}
             title={title}
+            width={650}
+            key={title}
             open
             onCancel={onCloseModal}
             keyboard
@@ -140,7 +172,12 @@ export const StepperModal = ({ onCloseModal, onOk, title, steps }: Props) => {
                         </Button>
                     )}
                     {current < items.length - 1 && (
-                        <Button type="primary" onClick={() => next()}>
+                        <Button
+                            type="primary"
+                            onClick={() => {
+                                setNavigateTo('forward');
+                            }}
+                        >
                             Next
                         </Button>
                     )}
@@ -157,19 +194,29 @@ export const StepperModal = ({ onCloseModal, onOk, title, steps }: Props) => {
                 </>
             }
         >
-            <Steps current={current} items={items} />
+            <StepsStyled current={current} items={items} />
             {current + 1 < items.length ? (
-                <StepContent>{steps[current].content({ step: steps[current], stepData, updateStepData })}</StepContent>
+                <StepContent key={`step-${current}`}>
+                    {React.createElement(steps[current].content, {
+                        step: steps[current],
+                        stepData,
+                        updateStepData,
+                        moveStep,
+                        navigateTo,
+                    })}
+                </StepContent>
             ) : (
-                <StepContent>
+                <StepContent key={`step-${current}`}>
                     <h3>Summary</h3>
                     <StepSummary>
-                        {steps.map((step, stepIndex) => {
-                            if (current < items.length) {
-                                return step.confirmation({ step: steps[stepIndex], stepData: stepsData[stepIndex] });
-                            }
-                            return <></>;
-                        })}
+                        {steps.map((step, stepIndex) => (
+                            <div key={`confirm-section-${steps[stepIndex].key}`}>
+                                {step.confirmation({
+                                    step: steps[stepIndex],
+                                    stepData: stepsData[stepIndex],
+                                })}
+                            </div>
+                        ))}
                     </StepSummary>
                 </StepContent>
             )}
