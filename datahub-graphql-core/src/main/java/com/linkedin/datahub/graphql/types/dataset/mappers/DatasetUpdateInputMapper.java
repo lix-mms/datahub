@@ -6,6 +6,7 @@ import com.linkedin.common.TagAssociationArray;
 import com.linkedin.common.urn.Urn;
 import com.linkedin.data.template.SetMode;
 import com.linkedin.datahub.graphql.generated.DatasetUpdateInput;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.SchemaFieldInputMapper;
 import com.linkedin.datahub.graphql.types.common.mappers.InstitutionalMemoryUpdateMapper;
 import com.linkedin.datahub.graphql.types.common.mappers.OwnershipUpdateMapper;
 import com.linkedin.datahub.graphql.types.common.mappers.util.UpdateMappingHelper;
@@ -112,13 +113,19 @@ public class DatasetUpdateInputMapper implements InputModelMapper<DatasetUpdateI
       final var dataAccessConfiguration = new DataAccessConfiguration();
       final var dataAccessConfigurationInput = datasetUpdateInput.getDataAccessConfiguration();
       dataAccessConfiguration.setFieldAccessConfig(
-        new SchemaFieldAccessConfigArray(
-          dataAccessConfigurationInput.getFieldAccessConfig().stream().map(
-              c -> new SchemaFieldAccessConfig()
-                .setFieldPath(c.getFieldPath())
-                .setNdaRequired(c.getNdaRequired(), SetMode.IGNORE_NULL)
-                .setVisible(c.getVisible(), SetMode.IGNORE_NULL))
-            .collect(Collectors.toList())));
+          new SchemaFieldAccessConfigArray(
+              dataAccessConfigurationInput.getFieldAccessConfig().stream()
+                  .map(configInput -> {
+                    final var result = new SchemaFieldAccessConfig()
+                        .setFieldPath(configInput.getFieldPath())
+                        .setNdaRequired(configInput.getNdaRequired(), SetMode.IGNORE_NULL)
+                        .setVisible(configInput.getVisible(), SetMode.IGNORE_NULL);
+                    if (configInput.getType() != null) {
+                      result.setType(SchemaFieldInputMapper.mapGqlTypeToPdlType(configInput.getType()));
+                    }
+                    return result;
+                  })
+                  .collect(Collectors.toList())));
       dataAccessConfiguration.setPurposeRequired(dataAccessConfigurationInput.getPurposeRequired());
 
       proposals.add(updateMappingHelper.aspectToProposal(dataAccessConfiguration, DATASET_DATA_ACCESS_CONFIGURATION_ASPECT_NAME));

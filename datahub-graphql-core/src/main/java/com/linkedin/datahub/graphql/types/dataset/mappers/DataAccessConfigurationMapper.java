@@ -3,6 +3,7 @@ package com.linkedin.datahub.graphql.types.dataset.mappers;
 import com.linkedin.common.urn.Urn;
 import com.linkedin.datahub.graphql.generated.DataAccessConfiguration;
 import com.linkedin.datahub.graphql.generated.SchemaFieldAccessConfig;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.SchemaFieldInputMapper;
 import com.linkedin.mxe.SystemMetadata;
 
 import javax.annotation.Nonnull;
@@ -21,11 +22,16 @@ public class DataAccessConfigurationMapper {
         final var result = new DataAccessConfiguration();
         result.setPurposeRequired(input.hasPurposeRequired());
         result.setFieldAccessConfig(input.getFieldAccessConfig().stream()
-            .map(schemaFieldAccessConfig -> new SchemaFieldAccessConfig(
-                schemaFieldAccessConfig.getFieldPath(),
-                schemaFieldAccessConfig.isVisible(),
-                schemaFieldAccessConfig.isNdaRequired()
-            ))
+            .map(schemaFieldAccessConfig -> {
+                final var builder = SchemaFieldAccessConfig.builder();
+                builder.setFieldPath(schemaFieldAccessConfig.getFieldPath())
+                        .setVisible(schemaFieldAccessConfig.isVisible())
+                        .setNdaRequired(schemaFieldAccessConfig.isNdaRequired());
+                if (schemaFieldAccessConfig.getType() != null) {
+                    builder.setType(SchemaFieldInputMapper.mapPdlTypeToGqlType(schemaFieldAccessConfig.getType()));
+                }
+                return builder.build();
+            })
             .collect(Collectors.toList()));
         return result;
     }

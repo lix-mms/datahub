@@ -1344,14 +1344,15 @@ type Dataset implements EntityWithRelationships & Entity & BrowsableEntity {
 }
 
 type SchemaFieldAccessConfig {
-    fieldPath: String
+    fieldPath: String!
+    type: SchemaFieldDataType
     visible: Boolean
     ndaRequired: Boolean
 }
 
 type DataAccessConfiguration {
     purposeRequired: Boolean
-    fieldAccessConfig: [SchemaFieldAccessConfig]
+    fieldAccessConfig: [SchemaFieldAccessConfig!]
 }
 
 type FineGrainedLineage {
@@ -4141,7 +4142,8 @@ input DatasetEditablePropertiesUpdate {
 }
 
 input SchemaFieldAccessConfigInput {
-    fieldPath: String
+    fieldPath: String!
+    type: SchemaFieldDataType
     visible: Boolean
     ndaRequired: Boolean
 }

@@ -61,7 +61,7 @@ public class DataAccessService {
     dataAccessParties.setAuthorizedApprovers(new CorpuserUrnArray(owners));
 
     publishDataAccess(EntityKeyUtils.convertEntityKeyToUrn(dataAccessKey, DATA_ACCESS_ENTITY_NAME), dataAccessProperties, dataAccessStatusInfo, dataAccessParties, authentication);
-    return dataAccessKey.toString();
+    return EntityKeyUtils.convertEntityKeyToUrn(dataAccessKey, DATA_ACCESS_ENTITY_NAME).toString();
   }
 
   @SneakyThrows({RemoteInvocationException.class, CloneNotSupportedException.class})
