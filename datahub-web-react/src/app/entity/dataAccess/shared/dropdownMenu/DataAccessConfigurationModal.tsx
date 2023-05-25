@@ -18,26 +18,13 @@ import { useEntityRegistry } from '../../../../useEntityRegistry';
 import { filterSchemaRows } from '../../../shared/tabs/Dataset/Schema/utils/filterSchemaRows';
 import { useGetDataAccessConfigurationQuery, useUpdateDatasetMutation } from '../../../../../graphql/dataset.generated';
 import { useEntityData } from '../../../shared/EntityContext';
+import { ExtendedSchemaFields } from '../../../dataset/profile/schema/utils/types';
+import { DataAccessConfiguration, SchemaFieldAccessConfig } from '../../../../../types.generated';
 
 type Props = {
     onCloseModal: () => void;
     onOk: () => void;
     title?: string;
-};
-
-type FieldAccessConfig = {
-    fieldPath: string;
-    ndaRequired: boolean;
-    visible: boolean;
-};
-
-type DataAccessConfiguration = {
-    purposeRequired: boolean;
-    fieldAccessConfig: FieldAccessConfig[];
-};
-
-type DataAccessConfigurationData = {
-    dataAccessConfiguration: DataAccessConfiguration;
 };
 
 const TableWrapper = styled.div`
@@ -47,18 +34,18 @@ const TableWrapper = styled.div`
 /**
  * Map step values to GraphQL structure
  */
-const prepareToSend = (values: StepsData): DataAccessConfigurationData => {
+const prepareToSend = (values: StepsData, schemaFields: ExtendedSchemaFields[]): DataAccessConfiguration => {
     return {
-        dataAccessConfiguration: {
-            purposeRequired: true, // HARDCODED FOR MVP
-            fieldAccessConfig: Object.keys(values[0].columns).map((key) => {
-                return {
-                    fieldPath: key,
-                    ndaRequired: false, // HARDCODED FOR MVP
-                    visible: values[0].columns[key] as boolean,
-                };
-            }),
-        },
+        purposeRequired: true, // HARDCODED FOR MVP
+        fieldAccessConfig: Object.keys(values[0].columns).map((key) => {
+            const [schemaData] = schemaFields.filter((field) => field.fieldPath === key);
+            return {
+                fieldPath: key,
+                ndaRequired: false, // HARDCODED FOR MVP
+                visible: values[0].columns[key] as boolean,
+                type: schemaData.type,
+            };
+        }),
     };
 };
 
@@ -151,7 +138,7 @@ const SchemaConfirmationStep = ({ step, stepData }: ConfirmationStepComponentPro
     );
 };
 
-export const DataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
+export const DataAccessConfigurationModal = ({ onCloseModal, onOk, title }: Props) => {
     const entityRegistry = useEntityRegistry();
     const { urn } = useEntityData();
     const { data: configurationEntity, loading: loadingConfigurationEntity } = useGetDataAccessConfigurationQuery({
@@ -180,10 +167,10 @@ export const DataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
     }, [filteredRows]);
 
     const storedFieldConfig = useMemo(() => {
-        const configurationSaved: Record<string, FieldAccessConfig> = {};
+        const configurationSaved: Record<string, SchemaFieldAccessConfig> = {};
         configurationEntity?.dataset?.dataAccessConfiguration?.fieldAccessConfig?.forEach((field) => {
             if (field && field.fieldPath) {
-                const config = field as FieldAccessConfig;
+                const config = field as SchemaFieldAccessConfig;
                 configurationSaved[field.fieldPath] = config;
             }
         });
@@ -195,7 +182,7 @@ export const DataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
         fieldPaths.forEach((el) => {
             let defaultValue = true;
             if (el.fieldPath in storedFieldConfig) {
-                defaultValue = storedFieldConfig[el.fieldPath].visible;
+                defaultValue = storedFieldConfig[el.fieldPath].visible || false;
             }
             schemaFields[el.fieldPath] = { defaultValue, multiValue: false, inputType: 'selectable-cell' };
         });
@@ -215,10 +202,10 @@ export const DataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
     ];
 
     const onComplete = async (values: StepsData) => {
-        const dataAccessConfiguration = prepareToSend(values);
+        const dataAccessConfiguration = prepareToSend(values, fieldPaths);
 
         try {
-            await updateEntity?.({ variables: { urn, input: dataAccessConfiguration } });
+            await updateEntity?.({ variables: { urn, input: { dataAccessConfiguration } } });
         } catch (errorUpdating) {
             console.error(errorUpdating);
         }

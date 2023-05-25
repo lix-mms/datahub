@@ -1,16 +1,89 @@
 import React from 'react';
 
-import { Step, StepperModal } from '../stepper/StepperModal';
+import { Step, StepperModal, StepsData } from '../stepper/StepperModal';
 import { GenericFormConfirmationStep, GenericFormStep } from '../stepper/StepForm';
+import { useEntityData } from '../../../shared/EntityContext';
+import { useGetDataAccessConfigurationQuery } from '../../../../../graphql/dataset.generated';
+import {
+    CreateDataAccessInput,
+    SchemaFieldAccessConfig,
+    SchemaFieldAccessInput,
+    SchemaFieldDataType,
+} from '../../../../../types.generated';
+import { useCreateDataAccessMutation } from '../../../../../graphql/dataAccess.generated';
 
 type Props = {
     onCloseModal: () => void;
     onOk: () => void;
     title?: string;
 };
+/**
+ * Map step values to GraphQL structure
+ */
+const prepareToSend = (
+    values: StepsData,
+    datasetUrn: string,
+    configurationEntity: SchemaFieldAccessConfig[],
+): CreateDataAccessInput => {
+    const flatValues = Object.values(values).reduce((acc, curr) => {
+        return { ...acc, ...curr };
+    }, {});
+
+    const {
+        target: { datasetName, project, view },
+        principal: { principalId },
+        purpose,
+    } = flatValues;
+
+    const purposeString = purpose.purpose as string;
+
+    const fieldAccess: SchemaFieldAccessInput[] = configurationEntity
+        .filter((field) => field.visible)
+        .map((field) => {
+            const fieldConfig: SchemaFieldAccessInput = {
+                fieldPath: field.fieldPath || '',
+                type: field.type as SchemaFieldDataType,
+            };
+            return fieldConfig;
+        });
+
+    // TODO build this hardcoded value dynamically when multiple platforms are supported
+    const platform = 'urn:li:dataPlatform:bigquery';
+
+    return {
+        datasetUrn,
+        dataPlatformPrincipalUrn: `urn:li:dataPlatformPrincipal:(urn:li:dataPlatform:bigquery,${principalId})`,
+        properties: {
+            purpose: purposeString,
+            target: `urn:li:dataset:(${platform},${project}.${datasetName}.${view},PROD)`,
+            details: '',
+            fieldAccesses: fieldAccess,
+        },
+    };
+};
 
 export const RequestDataAccessModal = ({ onCloseModal, onOk, title }: Props) => {
     const modalTitle = title || 'Create a data access request';
+    const { urn } = useEntityData();
+    const { data: configurationEntity } = useGetDataAccessConfigurationQuery({
+        variables: { urn },
+    });
+
+    const fieldAccessConfig = configurationEntity?.dataset?.dataAccessConfiguration
+        ?.fieldAccessConfig as SchemaFieldAccessConfig[];
+
+    const [createDataAccessMutation] = useCreateDataAccessMutation();
+
+    const onComplete = async (values: StepsData) => {
+        const dataAccessConfiguration = prepareToSend(values, urn, fieldAccessConfig);
+
+        try {
+            await createDataAccessMutation({ variables: { input: dataAccessConfiguration } });
+            onOk();
+        } catch (errorUpdating) {
+            console.error(errorUpdating);
+        }
+    };
 
     const steps: Step[] = [
         {
@@ -123,5 +196,5 @@ export const RequestDataAccessModal = ({ onCloseModal, onOk, title }: Props) => 
         },
     ];
 
-    return <StepperModal title={modalTitle} onCloseModal={onCloseModal} onOk={onOk} steps={steps} />;
+    return <StepperModal title={modalTitle} onCloseModal={onCloseModal} onOk={onComplete} steps={steps} />;
 };

@@ -6,7 +6,7 @@ import { SettingOutlined } from '@ant-design/icons';
 import { ReactComponent as DataAccessSvg } from '../../../../../images/data-access.svg';
 
 import { useDataAccessRole } from '../../useDataAccessRole';
-import { DataAccessModal } from './DataAccessModal';
+import { DataAccessConfigurationModal } from './DataAccessConfigurationModal';
 import { RequestDataAccessModal } from './RequestDataAccessModal';
 import { useEntityData } from '../../../shared/EntityContext';
 import { useGetDataAccessConfigurationQuery } from '../../../../../graphql/dataset.generated';
@@ -24,7 +24,8 @@ const ButtonStyled = styled(Button)`
     font-weight: 500;
     color: black !important;
 `;
-export const DropdownAccessDataMenu = () => {
+
+export const DropdownDataAccessMenu = () => {
     const { isOwner } = useDataAccessRole();
     const [showAccessConfigModal, setShowAccessConfigModal] = useState(false);
     const [showRequestDataAccessModal, setShowRequestDataAccessModal] = useState(false);
@@ -65,7 +66,7 @@ export const DropdownAccessDataMenu = () => {
                         <ButtonStyled icon={<DataAccessIcon />}>Data Access</ButtonStyled>
                     </Dropdown>
                     {showAccessConfigModal && (
-                        <DataAccessModal
+                        <DataAccessConfigurationModal
                             onOk={() => {
                                 message.success('Access Configuration has been stored');
                                 setShowAccessConfigModal(false);
@@ -82,7 +83,10 @@ export const DropdownAccessDataMenu = () => {
                             onCloseModal={() => {
                                 setShowRequestDataAccessModal(false);
                             }}
-                            onOk={() => {}}
+                            onOk={() => {
+                                message.success('Access Data Request has been sent');
+                                setShowRequestDataAccessModal(false);
+                            }}
                             key="request-data-access-modal"
                         />
                     )}

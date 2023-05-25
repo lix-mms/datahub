@@ -18,7 +18,6 @@ export const InputPrincipalId: React.FC<PriceInputProps> = ({ value, onChange })
 
     const triggerChange = ({ type, id }: { type?: PrincipalType; id?: string }) => {
         const newValue = `${type}:${id}`;
-        console.log('newValue', newValue);
         onChange?.(newValue);
     };
 

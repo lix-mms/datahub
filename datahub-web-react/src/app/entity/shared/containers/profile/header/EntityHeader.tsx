@@ -16,7 +16,7 @@ import ExternalUrlButton from '../../../ExternalUrlButton';
 import ShareButton from '../../../../../shared/share/ShareButton';
 import { capitalizeFirstLetterOnly } from '../../../../../shared/textUtil';
 import { useUserContext } from '../../../../../context/useUserContext';
-import { DropdownAccessDataMenu } from '../../../../dataAccess/shared/dropdownMenu/DropdownAccessDataMenu';
+import { DropdownDataAccessMenu } from '../../../../dataAccess/shared/dropdownMenu/DropdownDataAccessMenu';
 
 const TitleWrapper = styled.div`
     display: flex;
@@ -133,7 +133,7 @@ export const EntityHeader = ({ headerDropdownItems, headerActionItems, isNameEdi
                         {headerActionItems && (
                             <EntityActions urn={urn} actionItems={headerActionItems} refetchForEntity={refetch} />
                         )}
-                        <DropdownAccessDataMenu />
+                        <DropdownDataAccessMenu />
                         <ShareButton entityType={entityType} subType={subType} urn={urn} name={entityName} />
                         {headerDropdownItems && (
                             <EntityDropdown

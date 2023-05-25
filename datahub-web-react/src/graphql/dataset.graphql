@@ -320,6 +320,7 @@ query getDataAccessConfiguration($urn: String!) {
                 fieldPath
                 visible
                 ndaRequired
+                type
             }
         }
     }
