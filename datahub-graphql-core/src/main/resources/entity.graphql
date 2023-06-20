@@ -792,6 +792,11 @@ enum EntityType {
     DATA_PLATFORM_INSTANCE
 
     """
+    Data Platform Principal Entity
+    """
+    DATA_PLATFORM_PRINCIPAL
+
+    """
     A DataHub Access Token
     """
     ACCESS_TOKEN
@@ -6430,7 +6435,11 @@ type DataAccess implements Entity {
 
     accessParties: DataAccessParties
 
+    lifeCycle: DataAccessLifeCycle
+
     dataset: Dataset!
+
+    principal: DataPlatformPrincipal!
 
     relationships(input: RelationshipsInput!): EntityRelationshipsResult
 }
@@ -6450,6 +6459,8 @@ enum DataAccessStatus {
     PROVISIONING_FAILED
 
     REJECTED
+
+    DEPROVISIONING_FAILED
 
     REVOKED
 
@@ -6481,6 +6492,18 @@ type DataAccessParties {
     requester: CorpUser!
     grantor: CorpUser
     authorizedApprovers: [CorpUser!]
+}
+
+type DataAccessLifeCycle {
+    requestTime: Long!
+}
+
+type DataPlatformPrincipal implements Entity {
+    urn: String!
+    type: EntityType!
+    platform: DataPlatform!
+    name: String!
+    relationships(input: RelationshipsInput!): EntityRelationshipsResult
 }
 
 """

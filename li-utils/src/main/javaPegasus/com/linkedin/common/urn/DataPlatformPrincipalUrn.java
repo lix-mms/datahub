@@ -12,20 +12,20 @@ public final class DataPlatformPrincipalUrn extends Urn {
   public static final String ENTITY_TYPE = "dataPlatformPrincipal";
 
   private final DataPlatformUrn _platform;
-  private final String _principal;
+  private final String _name;
 
-  public DataPlatformPrincipalUrn(DataPlatformUrn platform, String _principal) {
-    super(ENTITY_TYPE, TupleKey.create(platform, _principal));
+  public DataPlatformPrincipalUrn(DataPlatformUrn platform, String name) {
+    super(ENTITY_TYPE, TupleKey.create(platform, name));
     this._platform = platform;
-    this._principal = _principal;
+    this._name = name;
   }
 
   public DataPlatformUrn getPlatformEntity() {
     return _platform;
   }
 
-  public String getPrincipal() {
-    return _principal;
+  public String getName() {
+    return _name;
   }
 
   public static DataPlatformPrincipalUrn createFromString(String rawUrn) throws URISyntaxException {

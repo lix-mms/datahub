@@ -95,7 +95,6 @@ query getDataAccessStatusInfoHistory($input: GetDataAccessStatusInfoHistoryInput
     }
 }
 
-
 fragment corpuser on CorpUser {
     urn
     username
@@ -104,20 +103,34 @@ fragment corpuser on CorpUser {
         active
         displayName
         title
-        firstName
-        lastName
-        fullName
-        email
-        departmentName
     }
-    globalTags {
-        ...globalTagsFields
+    editableProperties {
+        pictureLink
+        displayName
+        title
+        email
     }
 }
 
-
 fragment dataAccess on DataAccess {
     urn
+    dataset {
+        properties{
+            name
+            qualifiedName
+        }
+    }
+    principal {
+        platform {
+            urn
+            properties {
+                displayName
+                type
+                datasetNameDelimiter
+            }
+        }
+        name
+    }
     properties {
         purpose
         details
@@ -138,6 +151,9 @@ fragment dataAccess on DataAccess {
             time
             message
         }
+    }
+    lifeCycle {
+        requestTime
     }
     accessParties {
         requester {

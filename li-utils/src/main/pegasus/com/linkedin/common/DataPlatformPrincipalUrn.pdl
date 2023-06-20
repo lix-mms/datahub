@@ -16,11 +16,11 @@ namespace com.linkedin.common
   "fields" : [ {
     "type" : "com.linkedin.common.urn.DataPlatformUrn",
     "name" : "platform",
-    "doc" : "Standardized platform urn."
+    "doc"  : "Standardized platform urn."
   }, {
-    "name" : "principalName",
-    "doc" : "Principal native name e.g. user:alpha@google.com, serviceAccount:billingAccount@google.com",
     "type" : "string",
+    "name" : "name",
+    "doc"  : "Principal native name e.g. user:alpha@google.com, serviceAccount:billingAccount@google.com",
   }],
   "maxLength" : 1024
 }

@@ -106,7 +106,13 @@ import com.linkedin.datahub.graphql.resolvers.container.ContainerEntitiesResolve
 import com.linkedin.datahub.graphql.resolvers.container.ParentContainersResolver;
 import com.linkedin.datahub.graphql.resolvers.dashboard.DashboardStatsSummaryResolver;
 import com.linkedin.datahub.graphql.resolvers.dashboard.DashboardUsageStatsResolver;
-import com.linkedin.datahub.graphql.resolvers.dataaccess.*;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.CreateDataAccessResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.DataAccessLifeCycleResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.DataAccessPartiesResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.DataAccessPropertiesResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.DataAccessStatusInfoResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.GetDataAccessStatusInfoHistoryResolver;
+import com.linkedin.datahub.graphql.resolvers.dataaccess.UpdateDataAccessResolver;
 import com.linkedin.datahub.graphql.resolvers.dataset.DatasetHealthResolver;
 import com.linkedin.datahub.graphql.resolvers.dataset.DatasetStatsSummaryResolver;
 import com.linkedin.datahub.graphql.resolvers.dataset.DatasetUsageStatsResolver;
@@ -262,6 +268,7 @@ import com.linkedin.datahub.graphql.types.dataflow.DataFlowType;
 import com.linkedin.datahub.graphql.types.datajob.DataJobType;
 import com.linkedin.datahub.graphql.types.dataplatform.DataPlatformType;
 import com.linkedin.datahub.graphql.types.dataplatforminstance.DataPlatformInstanceType;
+import com.linkedin.datahub.graphql.types.dataplatformprincipal.DataPlatformPrincipalType;
 import com.linkedin.datahub.graphql.types.dataprocessinst.mappers.DataProcessInstanceRunEventMapper;
 import com.linkedin.datahub.graphql.types.dataset.DatasetType;
 import com.linkedin.datahub.graphql.types.dataset.VersionedDatasetType;
@@ -399,6 +406,7 @@ public class GmsGraphQLEngine {
     private final AssertionType assertionType;
     private final VersionedDatasetType versionedDatasetType;
     private final DataPlatformInstanceType dataPlatformInstanceType;
+    private final DataPlatformPrincipalType dataPlatformPrincipalType;
     private final AccessTokenMetadataType accessTokenMetadataType;
     private final TestType testType;
     private final DataHubPolicyType dataHubPolicyType;
@@ -494,6 +502,7 @@ public class GmsGraphQLEngine {
         this.assertionType = new AssertionType(entityClient);
         this.versionedDatasetType = new VersionedDatasetType(entityClient);
         this.dataPlatformInstanceType = new DataPlatformInstanceType(entityClient);
+        this.dataPlatformPrincipalType = new DataPlatformPrincipalType(entityClient);
         this.accessTokenMetadataType = new AccessTokenMetadataType(entityClient);
         this.testType = new TestType(entityClient);
         this.dataHubPolicyType = new DataHubPolicyType(entityClient);
@@ -527,6 +536,7 @@ public class GmsGraphQLEngine {
             assertionType,
             versionedDatasetType,
             dataPlatformInstanceType,
+            dataPlatformPrincipalType,
             accessTokenMetadataType,
             testType,
             dataHubPolicyType,
@@ -1568,11 +1578,13 @@ public class GmsGraphQLEngine {
             typeWiring -> typeWiring
                 .dataFetcher("relationships", new EntityRelationshipsResultResolver(graphClient))
                 .dataFetcher("dataset", new LoadableTypeResolver<>(datasetType,
-                    (env) -> ((DataAccess) env.getSource()).getDataset().getUrn())
-                )
+                    (env) -> ((DataAccess) env.getSource()).getDataset().getUrn()))
+                .dataFetcher("principal", new LoadableTypeResolver<>(dataPlatformPrincipalType,
+                    (env) -> ((DataAccess) env.getSource()).getPrincipal().getUrn()))
                 .dataFetcher("statusInfo", new DataAccessStatusInfoResolver(entityClient))
                 .dataFetcher("properties", new DataAccessPropertiesResolver(entityClient))
                 .dataFetcher("accessParties", new DataAccessPartiesResolver(entityClient))
+                .dataFetcher("lifeCycle", new DataAccessLifeCycleResolver(entityClient))
         );
     }
 

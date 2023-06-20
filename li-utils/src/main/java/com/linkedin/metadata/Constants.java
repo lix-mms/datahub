@@ -118,6 +118,7 @@ public class Constants {
   public static final String DATA_ACCESS_STATUS_INFO_ASPECT_NAME = "dataAccessStatusInfo";
   public static final String DATA_ACCESS_PROPERTIES_ASPECT_NAME = "dataAccessProperties";
   public static final String DATA_ACCESS_PARTIES_ASPECT_NAME = "dataAccessParties";
+  public static final String DATA_ACCESS_LIFE_CYCLE_ASPECT_NAME = "dataAccessLifeCycle";
 
   // Chart
   public static final String CHART_KEY_ASPECT_NAME = "chartKey";

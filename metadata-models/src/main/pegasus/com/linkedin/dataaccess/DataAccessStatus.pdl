@@ -46,6 +46,11 @@ enum DataAccessStatus {
   REVOKED
 
   /**
+   * Data access deprovisioning failed.
+   */
+  DEPROVISIONING_FAILED
+
+  /**
    * Data access expired
    */
   EXPIRED

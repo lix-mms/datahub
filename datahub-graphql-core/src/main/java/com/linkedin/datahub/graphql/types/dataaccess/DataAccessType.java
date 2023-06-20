@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 public class DataAccessType implements com.linkedin.datahub.graphql.types.EntityType<DataAccess, String> {
 
     static final Set<String> ASPECTS_TO_FETCH = ImmutableSet.of(
-            Constants.DATA_ACCESS_KEY_ASPECT_NAME,
-            Constants.DATA_ACCESS_STATUS_INFO_ASPECT_NAME,
-            Constants.DATA_ACCESS_PROPERTIES_ASPECT_NAME
+        Constants.DATA_ACCESS_KEY_ASPECT_NAME,
+        Constants.DATA_ACCESS_STATUS_INFO_ASPECT_NAME,
+        Constants.DATA_ACCESS_PROPERTIES_ASPECT_NAME
     );
     private final EntityClient _entityClient;
 
@@ -49,27 +49,27 @@ public class DataAccessType implements com.linkedin.datahub.graphql.types.Entity
     @Override
     public List<DataFetcherResult<DataAccess>> batchLoad(@Nonnull List<String> urns, @Nonnull QueryContext context) throws Exception {
         final List<Urn> darUrns = urns.stream()
-                .map(this::getUrn)
-                .collect(Collectors.toList());
+            .map(this::getUrn)
+            .collect(Collectors.toList());
 
         try {
             final Map<Urn, EntityResponse> entities = _entityClient.batchGetV2(
-                    Constants.DATA_ACCESS_ENTITY_NAME,
-                    new HashSet<>(darUrns),
-                    ASPECTS_TO_FETCH,
-                    context.getAuthentication());
+                Constants.DATA_ACCESS_ENTITY_NAME,
+                new HashSet<>(darUrns),
+                ASPECTS_TO_FETCH,
+                context.getAuthentication());
 
             final List<EntityResponse> gmsResults = new ArrayList<>();
             for (Urn urn : darUrns) {
                 gmsResults.add(entities.getOrDefault(urn, null));
             }
             return gmsResults.stream()
-                    .map(gmsResult ->
-                            gmsResult == null ? null : DataFetcherResult.<DataAccess>newResult()
-                                    .data(DataAccessMapper.map(gmsResult))
-                                    .build()
-                    )
-                    .collect(Collectors.toList());
+                .map(gmsResult ->
+                    gmsResult == null ? null : DataFetcherResult.<DataAccess>newResult()
+                        .data(DataAccessMapper.map(gmsResult))
+                        .build()
+                )
+                .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Failed to load data access", e);
         }

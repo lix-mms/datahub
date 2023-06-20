@@ -30,6 +30,7 @@ entities:
       - dataAccessProperties
       - dataAccessStatusInfo
       - dataAccessParties
+      - dataAccessLifeCycle
   - name: dataPlatformPrincipal
     doc: DataPlatformPrincipal represents a principal in a particular data platform.
     keyAspect: dataPlatformPrincipalKey

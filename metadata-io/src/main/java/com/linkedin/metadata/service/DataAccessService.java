@@ -5,7 +5,11 @@ import com.google.common.collect.Maps;
 import com.linkedin.common.CorpuserUrnArray;
 import com.linkedin.common.Owner;
 import com.linkedin.common.Ownership;
-import com.linkedin.common.urn.*;
+import com.linkedin.common.urn.CorpuserUrn;
+import com.linkedin.common.urn.DataAccessUrn;
+import com.linkedin.common.urn.DatasetUrn;
+import com.linkedin.common.urn.Urn;
+import com.linkedin.dataaccess.DataAccessLifeCycle;
 import com.linkedin.dataaccess.DataAccessParties;
 import com.linkedin.dataaccess.DataAccessProperties;
 import com.linkedin.dataaccess.DataAccessStatus;
@@ -60,7 +64,17 @@ public class DataAccessService {
     dataAccessParties.setRequester(CorpuserUrn.createFromString(authentication.getActor().toUrnStr()));
     dataAccessParties.setAuthorizedApprovers(new CorpuserUrnArray(owners));
 
-    publishDataAccess(EntityKeyUtils.convertEntityKeyToUrn(dataAccessKey, DATA_ACCESS_ENTITY_NAME), dataAccessProperties, dataAccessStatusInfo, dataAccessParties, authentication);
+    final var dataAccessLifeCycle = new DataAccessLifeCycle();
+    dataAccessLifeCycle.setRequestTime(dataAccessStatusInfo.getAuditStamp().getTime());
+
+    publishDataAccess(
+        EntityKeyUtils.convertEntityKeyToUrn(dataAccessKey, DATA_ACCESS_ENTITY_NAME),
+        dataAccessLifeCycle,
+        dataAccessProperties,
+        dataAccessStatusInfo,
+        dataAccessParties,
+        authentication
+    );
     return EntityKeyUtils.convertEntityKeyToUrn(dataAccessKey, DATA_ACCESS_ENTITY_NAME).toString();
   }
 
@@ -90,14 +104,20 @@ public class DataAccessService {
     DataAccessParties parties = null;
 
     final var newStatusInfo = statusInfoFromInput.copy();
-    // verify if current user is allowed to approve request
+    // verify if current user is allowed to approve or revoke request
+    // or set provisioning/deprovisioning status manually
     if (newStatusInfo.getStatus() == DataAccessStatus.APPROVED ||
-        newStatusInfo.getStatus() == DataAccessStatus.PROVISIONED) {
+        newStatusInfo.getStatus() == DataAccessStatus.PROVISIONED ||
+        newStatusInfo.getStatus() == DataAccessStatus.PROVISIONING_FAILED ||
+        newStatusInfo.getStatus() == DataAccessStatus.REVOKED ||
+        newStatusInfo.getStatus() == DataAccessStatus.DEPROVISIONING_FAILED
+    ) {
       final var actorUrnStr = authentication.getActor().toUrnStr();
       if (getOwnerCorpUsersOfDataset(key.getDataset())
           .noneMatch(u -> u.toString().equals(actorUrnStr))
       ) {
-        throw new IllegalArgumentException("Only owners are allowed to approve data access requests.");
+        throw new IllegalArgumentException(
+            "Only owners are allowed to set data access status to " + newStatusInfo.getStatus());
       }
 
       final var existingPartiesEnvAsp = existingDataAccessResponse.getAspects().get(DATA_ACCESS_PARTIES_ASPECT_NAME);
@@ -121,17 +141,28 @@ public class DataAccessService {
             newStatusInfo.getStatus(),
             propertiesDiffMessage));
 
-    publishDataAccess(urn, propertiesFromInput, newStatusInfo, parties, authentication);
+    publishDataAccess(urn, null, propertiesFromInput, newStatusInfo, parties, authentication);
     return urn.toString();
   }
 
   void publishDataAccess(@Nonnull final Urn urn,
+                         @Nullable final DataAccessLifeCycle dataAccessLifeCycle,
                          @Nullable final DataAccessProperties dataAccessProperties,
                          @Nonnull final DataAccessStatusInfo dataAccessStatusInfo,
                          @Nullable final DataAccessParties dataAccessParties,
                          final Authentication authentication) throws RemoteInvocationException {
     Objects.requireNonNull(urn, "urn must not be null");
     Objects.requireNonNull(dataAccessStatusInfo, "dataAccessStatusInfo must not be null");
+
+    if (dataAccessLifeCycle != null) {
+      final MetadataChangeProposal proposalProperties = new MetadataChangeProposal();
+      proposalProperties.setEntityUrn(urn);
+      proposalProperties.setEntityType(DATA_ACCESS_ENTITY_NAME);
+      proposalProperties.setAspectName(DATA_ACCESS_LIFE_CYCLE_ASPECT_NAME);
+      proposalProperties.setAspect(serializeAspect(dataAccessLifeCycle));
+      proposalProperties.setChangeType(ChangeType.UPSERT);
+      _entityClient.ingestProposal(proposalProperties, authentication, false);
+    }
 
     if (dataAccessProperties != null) {
       final MetadataChangeProposal proposalProperties = new MetadataChangeProposal();
@@ -171,12 +202,12 @@ public class DataAccessService {
         Set.of(OWNERSHIP_ASPECT_NAME),
         null);
     if (ownershipResponseV2 == null) {
-      throw new IllegalArgumentException("No owners of dataset to approve data access requests.");
+      throw new IllegalArgumentException("No owners of dataset to set data access status.");
     }
 
     final var ownership = ownershipResponseV2.getAspects().get(OWNERSHIP_ASPECT_NAME);
     if (ownership == null) {
-      throw new IllegalArgumentException("No owners of dataset to approve data access requests.");
+      throw new IllegalArgumentException("No owners of dataset to set data access status.");
     }
 
     // limitation: ignore CorpGroup as owner for now
